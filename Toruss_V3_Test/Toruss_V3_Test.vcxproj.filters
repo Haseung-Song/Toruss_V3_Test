@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="소스 파일\App">
+      <UniqueIdentifier>{d8123e03-c5de-4c36-852e-acb908cd9695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\UI">
+      <UniqueIdentifier>{5d0d8262-13cf-4c95-bd9d-679f57a2c5da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Network">
+      <UniqueIdentifier>{667e949a-0aaf-48e6-8b5f-d86d53ad58cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\View">
+      <UniqueIdentifier>{44bf8f9a-bbd7-427c-b5e4-12cf5af67fcc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Framework">
+      <UniqueIdentifier>{164b313d-82a2-4555-8d60-3778bd542217}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\App">
+      <UniqueIdentifier>{a41f259a-451d-4215-a2b0-e18fa584fb74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\UI">
+      <UniqueIdentifier>{09d92657-cd0f-457a-b43d-fc41850513ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Network">
+      <UniqueIdentifier>{ca611992-19ca-4413-8606-be3248020d8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\View">
+      <UniqueIdentifier>{66c893d4-27fb-462e-9eeb-18777750bbb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Framework">
+      <UniqueIdentifier>{170c4702-497d-4b3e-beee-fa4924b431d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Core">
+      <UniqueIdentifier>{5b63de67-053e-4e40-916d-8ee93f052a24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Resource">
+      <UniqueIdentifier>{bdf96ac9-cd67-4f8c-831d-c1d51b9ad4a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="리소스 파일\Resource">
+      <UniqueIdentifier>{50e565b9-57ba-4cb3-94c4-4590ce9cb6ea}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>헤더 파일\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="CRTSPDecoder.h">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Toruss_V3_Test.h">
+      <Filter>헤더 파일\App</Filter>
+    </ClInclude>
+    <ClInclude Include="CVideoView.h">
+      <Filter>헤더 파일\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Toruss_V3_TestDlg.h">
+      <Filter>헤더 파일\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoFrame.h">
+      <Filter>헤더 파일\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>헤더 파일\Resource</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Toruss_V3_Test.cpp">
+      <Filter>소스 파일\App</Filter>
+    </ClCompile>
+    <ClCompile Include="Toruss_V3_TestDlg.cpp">
+      <Filter>소스 파일\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="CRTSPDecoder.cpp">
+      <Filter>소스 파일\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="CVideoView.cpp">
+      <Filter>소스 파일\View</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TorussV3Test.rc">
+      <Filter>리소스 파일\Resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\Toruss_V3_Test.ico">
+      <Filter>리소스 파일\Resource</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\TorussV3Test.rc2">
+      <Filter>리소스 파일\Resource</Filter>
+    </None>
+  </ItemGroup>
+</Project>

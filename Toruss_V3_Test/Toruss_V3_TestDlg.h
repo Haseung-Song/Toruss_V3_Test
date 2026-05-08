@@ -1,0 +1,60 @@
+﻿
+// Toruss_V3_TestDlg.h: 헤더 파일
+//
+
+#pragma once
+
+#include "CVideoView.h"
+#include <thread>
+#include <atomic>
+
+// CTorussV3TestDlg 대화 상자
+class CTorussV3TestDlg : public CDialogEx
+{
+	// 생성입니다.
+public:
+	CTorussV3TestDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+
+	// 대화 상자 데이터입니다.
+#ifdef AFX_DESIGN_TIME
+	enum { IDD = IDD_TORUSS_V3_TEST_DIALOG };
+#endif
+
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
+
+
+	// 구현입니다.
+protected:
+	HICON m_hIcon;
+
+	// 생성된 메시지 맵 함수
+	virtual BOOL OnInitDialog();
+	afx_msg void OnPaint();
+	afx_msg HCURSOR OnQueryDragIcon();
+	DECLARE_MESSAGE_MAP()
+public:
+	// 왼쪽 EO 카메라 출력 영역
+	CStatic m_ColorCam;
+
+	// 오른쪽 IR 카메라 출력 영역
+	CStatic m_ThermalCam;
+
+private:
+	// EO 화면 출력 담당 클래스
+	CVideoView m_ColorCamView;
+
+	// IR 화면 출력 담당 클래스
+	CVideoView m_ThermalCamView;
+
+private:
+	std::thread m_videoThread; // 영상 재생을 위한 별도 스레드
+	std::atomic<bool> m_isPlaying = false; // 영상 재생 상태 플래그
+
+	void PlayTestVideo(); // 테스트 영상 재생 함수
+	void PlayEOIRVideo(); // [EOIR] 영상 재생 함수
+
+public:
+	afx_msg void OnBnClickedButtonConnect();
+	afx_msg void OnBnClickedButtonDisconnect();
+};

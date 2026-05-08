@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37216.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Toruss_V3_Test", "Toruss_V3_Test\Toruss_V3_Test.vcxproj", "{BEB1C86C-46E4-9067-1311-413710FD01EE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Debug|x64.ActiveCfg = Debug|x64
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Debug|x64.Build.0 = Debug|x64
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Debug|x86.ActiveCfg = Debug|Win32
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Debug|x86.Build.0 = Debug|Win32
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Release|x64.ActiveCfg = Release|x64
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Release|x64.Build.0 = Release|x64
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Release|x86.ActiveCfg = Release|Win32
+		{BEB1C86C-46E4-9067-1311-413710FD01EE}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8A468625-9F8C-4059-84BA-22F53E5E6C27}
+	EndGlobalSection
+EndGlobal
