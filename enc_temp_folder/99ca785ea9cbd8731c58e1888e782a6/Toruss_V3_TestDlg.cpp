@@ -164,10 +164,8 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	// IR RTSP 디코더 시작
 	m_irDecoder.Open(irRtsp);
 
-	// Open()은 내부 디코딩 스레드를 시작하는 함수이므로,
-	// 실제 RTSP 연결 완료까지 시간이 걸릴 수 있음.
-	// 따라서 최대 3초 동안 IsOpened() 상태를 확인하며 대기 필요
-	for (int i = 0; i < 30; i++)
+	// 디코더 연결 대기
+	for (int i = 0; i < 30; i++) // 최대 3초 대기
 	{
 		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened())
 			break;
@@ -175,9 +173,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		Sleep(100);
 	}
 
-	// 최대 대기 시간 이후에도 열리지 않은 경우 연결 실패로 판단
-
-	// 1. EO 연결 실패
+	// EO 연결 실패
 	if (!m_eoDecoder.IsOpened())
 	{
 		AfxMessageBox(_T("EO 카메라 연결 실패"));
@@ -189,7 +185,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		return;
 	}
 
-	// 2. IR 연결 실패
+	// IR 연결 실패
 	if (!m_irDecoder.IsOpened())
 	{
 		AfxMessageBox(_T("IR 카메라 연결 실패"));
