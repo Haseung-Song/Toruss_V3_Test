@@ -52,6 +52,12 @@
     <Filter Include="리소스 파일\Resource">
       <UniqueIdentifier>{50e565b9-57ba-4cb3-94c4-4590ce9cb6ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Database">
+      <UniqueIdentifier>{6f5a1cce-093f-4f57-9167-c9faaf4338cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Database">
+      <UniqueIdentifier>{35e92276-75f5-4e24-9808-445a53df8bf3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -81,6 +87,15 @@
     <ClInclude Include="Resource.h">
       <Filter>헤더 파일\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="CMSSQLManager.h">
+      <Filter>헤더 파일\Database</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceProfile.h">
+      <Filter>헤더 파일\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="RtspBuilder.h">
+      <Filter>헤더 파일\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Toruss_V3_Test.cpp">
@@ -97,6 +112,12 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>소스 파일\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="CMSSQLManager.cpp">
+      <Filter>소스 파일\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="RtspBuilder.cpp">
+      <Filter>소스 파일\Network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

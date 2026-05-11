@@ -8,6 +8,14 @@
 #include <thread>
 #include <atomic>
 #include "CRTSPDecoder.h"
+#include "CMSSQLManager.h"
+
+// [카메라] 연결 모드
+enum class CameraMode
+{
+	TEST_RTSP,		 // 단순 테스트 RTSP
+	DEVICE_PROFILE	 // MSSQL DeviceProfile 기반
+};
 
 // CTorussV3TestDlg 대화 상자
 class CTorussV3TestDlg : public CDialogEx
@@ -58,8 +66,14 @@ private:
 	std::thread m_videoThread; // 영상 재생을 위한 별도 스레드
 	std::atomic<bool> m_isPlaying = false; // 영상 재생 상태 플래그
 
-	void PlayTestVideo(); // 테스트 영상 재생 함수
-	void PlayEOIRVideo(); // [EOIR] 영상 재생 함수
+	CMSSQLManager m_sqlManager;
+
+	void PlayTestVideo(); // 테스트 영상 출력 함수
+	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
+	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
+
+	//CameraMode m_cameraMode = CameraMode::TEST_RTSP;	  // 1) RTSP 카메라 모드
+	CameraMode m_cameraMode = CameraMode::DEVICE_PROFILE; // 2) EO/IR 장비 카메라 연동
 
 public:
 	afx_msg void OnBnClickedButtonConnect();

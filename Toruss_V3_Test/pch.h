@@ -12,4 +12,11 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <comdef.h>
+
+// ADO(ActiveX Data Objects) COM 라이브러리 사용
+// MSSQL 연결 및 Recordset 사용을 위해 msado15.dll 타입 라이브러리 import
+#import "C:\\Program Files\\Common Files\\System\\ado\\msado15.dll" \
+    no_namespace rename("EOF", "ADOEOF")
+
 #endif //PCH_H
