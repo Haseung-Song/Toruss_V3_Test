@@ -158,68 +158,74 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	std::string irRtsp =
 		"rtsp://service:Xhddlf1!@192.168.0.107:554/rtsp_tunnel";
 
-	// OpenCV VideoCapture 객체
-	cv::VideoCapture eoCap;
-	cv::VideoCapture irCap;
+	// EO RTSP 디코더 시작
+	m_eoDecoder.Open(eoRtsp);
 
-	// EO RTSP 연결
-	eoCap.open(eoRtsp, cv::CAP_FFMPEG);
-	// EO 버퍼 크기 최소화
-	eoCap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+	// IR RTSP 디코더 시작
+	m_irDecoder.Open(irRtsp);
 
-	// IR RTSP 연결
-	irCap.open(irRtsp, cv::CAP_FFMPEG);
-	// IR 버퍼 크기 최소화
-	irCap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+	// 디코더 연결 대기
+	for (int i = 0; i < 50; i++) // 최대 5초 대기
+	{
+		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened())
+			break;
+
+		Sleep(100);
+	}
 
 	// EO 연결 실패
-	if (!eoCap.isOpened())
+	if (!m_eoDecoder.IsOpened())
 	{
 		AfxMessageBox(_T("EO 카메라 연결 실패"));
+
+		m_eoDecoder.Close();
+		m_irDecoder.Close();
 
 		m_isPlaying = false;
 		return;
 	}
 
 	// IR 연결 실패
-	if (!irCap.isOpened())
+	if (!m_irDecoder.IsOpened())
 	{
 		AfxMessageBox(_T("IR 카메라 연결 실패"));
+
+		m_eoDecoder.Close();
+		m_irDecoder.Close();
 
 		m_isPlaying = false;
 		return;
 	}
 
-	// EO 프레임 저장 변수
-	cv::Mat eoFrame;
+	// EO 최신 프레임 저장 변수
+	VideoFrame eoFrame;
 
-	// IR 프레임 저장 변수
-	cv::Mat irFrame;
+	// IR 최신 프레임 저장 변수
+	VideoFrame irFrame;
 
 	// 재생 중일 때 반복
 	while (m_isPlaying)
 	{
-		// 최신 프레임 쪽으로 최대한 따라가기
-		for (int i = 0; i < 3; i++)
+		// EO 최신 프레임 가져오기
+		if (m_eoDecoder.GetLatestFrame(eoFrame))
 		{
-			eoCap.grab();
-			irCap.grab();
+			m_ColorCamView.DrawFrame(eoFrame.bgr);
 		}
 
-		if (eoCap.retrieve(eoFrame))
-			m_ColorCamView.DrawFrame(eoFrame);
+		// IR 최신 프레임 가져오기
+		if (m_irDecoder.GetLatestFrame(irFrame))
+		{
+			m_ThermalCamView.DrawFrame(irFrame.bgr);
+		}
 
-		if (irCap.retrieve(irFrame))
-			m_ThermalCamView.DrawFrame(irFrame);
-
+		// 화면 출력 과부하 방지
 		Sleep(1);
 	}
+	// EO 디코더 종료
+	m_eoDecoder.Close();
 
-	// EO 영상 해제
-	eoCap.release();
-
-	// IR 영상 해제
-	irCap.release();
+	// IR 디코더 종료
+	m_irDecoder.Close();
 
 	// 재생 상태 종료
 	m_isPlaying = false;

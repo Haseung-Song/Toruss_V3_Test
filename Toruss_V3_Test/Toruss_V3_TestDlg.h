@@ -7,6 +7,7 @@
 #include "CVideoView.h"
 #include <thread>
 #include <atomic>
+#include "CRTSPDecoder.h"
 
 // CTorussV3TestDlg 대화 상자
 class CTorussV3TestDlg : public CDialogEx
@@ -46,6 +47,12 @@ private:
 
 	// IR 화면 출력 담당 클래스
 	CVideoView m_ThermalCamView;
+
+	// EO RTSP 디코더
+	CRTSPDecoder m_eoDecoder;
+
+	// IR RTSP 디코더
+	CRTSPDecoder m_irDecoder;
 
 private:
 	std::thread m_videoThread; // 영상 재생을 위한 별도 스레드
