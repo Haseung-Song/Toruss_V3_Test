@@ -83,8 +83,8 @@ BOOL CTorussV3TestDlg::OnInitDialog()
 	// [stdout] → 콘솔 출력
 	freopen_s(&fpOut, "CONOUT$", "w", stdout);
 
-	// [stderr] → FFmpeg/OpenCV 경고 숨김
-	freopen_s(&fpErr, "ffmpeg_log.txt", "w", stderr);
+	// [stderr] → 버림 (FFmpeg/OpenCV Warning 숨김)
+	freopen_s(&fpErr, "NUL", "w", stderr);
 
 	// [stdin] → 콘솔 입력
 	freopen_s(&fpIn, "CONIN$", "r", stdin);
