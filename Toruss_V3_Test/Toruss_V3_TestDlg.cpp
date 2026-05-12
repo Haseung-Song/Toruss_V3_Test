@@ -44,6 +44,7 @@ void CTorussV3TestDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CTorussV3TestDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_WM_DESTROY()
 
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CTorussV3TestDlg::OnBnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_DISCONNECT, &CTorussV3TestDlg::OnBnClickedButtonDisconnect)
@@ -176,6 +177,29 @@ HCURSOR CTorussV3TestDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+// 소멸자 및 리소스 정리
+void CTorussV3TestDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+
+	m_isPlaying = false; // 재생 상태 OFF
+
+	// 영상 스레드 종료 대기
+	if (m_videoThread.joinable())
+	{
+		m_videoThread.join();
+	}
+
+	// 디코더 종료
+	m_eoDecoder.Close();
+	m_irDecoder.Close();
+
+#ifdef _DEBUG
+	FreeConsole(); // 현재 프로그램에 연결된 콘솔 창 해제(닫기)
+#endif
+
+}
+
 
 // CONNECT 버튼 클릭
 void CTorussV3TestDlg::OnBnClickedButtonConnect()
@@ -189,7 +213,7 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 	// 이미 재생 중이면 먼저 중지
 	if (m_isPlaying)
 	{
-		m_isPlaying = false;
+		m_isPlaying = false; // 재생 상태 OFF
 
 		if (m_videoThread.joinable())
 			m_videoThread.join(); // 영상 스레드 종료 대기
@@ -246,7 +270,7 @@ void CTorussV3TestDlg::PlayTestVideo()
 
 	if (!cap.isOpened())
 	{
-		m_isPlaying = false;
+		m_isPlaying = false; // 재생 상태 OFF
 		AfxMessageBox(_T("영상 열기 실패"));
 		return;
 	}
@@ -429,6 +453,8 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		m_irDecoder.Close();
 
 		m_isPlaying = false; // 재생 상태 OFF
+
+		::CoUninitialize();
 		return;
 	}
 
@@ -441,6 +467,8 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		m_irDecoder.Close();
 
 		m_isPlaying = false; // 재생 상태 OFF
+
+		::CoUninitialize();
 		return;
 	}
 
@@ -591,6 +619,7 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 	{
 		CClientDC dc(&m_ColorCam);
 		CRect rect;
+
 		m_ColorCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 
@@ -601,6 +630,7 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 	{
 		CClientDC dc(&m_ThermalCam);
 		CRect rect;
+
 		m_ThermalCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 
