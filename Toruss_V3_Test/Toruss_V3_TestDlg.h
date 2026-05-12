@@ -11,11 +11,11 @@
 #include "CMSSQLManager.h"
 
 // [카메라] 연결 모드
-enum class CameraMode
-{
-	TEST_RTSP,		 // 단순 테스트 RTSP
-	DEVICE_PROFILE	 // MSSQL DeviceProfile 기반
-};
+//enum class CameraMode
+//{
+//	TEST_RTSP,		 // 단순 테스트 RTSP
+//	DEVICE_PROFILE	 // MSSQL DeviceProfile 기반
+//};
 
 // CTorussV3TestDlg 대화 상자
 class CTorussV3TestDlg : public CDialogEx
@@ -46,8 +46,10 @@ protected:
 public:
 	// 카메라 선택 ComboBox의 글자 크기 및 글꼴 조절용 Font 객체
 	CFont m_fontCombo;
+
 	// "장비 선택" Static Text 라벨의 글자 크기 및 글꼴 조절용 Font 객체
 	CFont m_fontLabel;
+
 	// 카메라 선택 영역 제목 표시용 Static Text 컨트롤
 	// 예: "장비 선택"
 	CStatic m_labelCamera;
@@ -60,6 +62,9 @@ public:
 	CStatic m_ThermalCam;
 
 	CComboBox m_comboCamera; // 카메라 선택 ComboBox
+
+	// 현재 선택된 카메라 인덱스 (-1: 선택 없음)
+	int nSel = -1;
 
 private:
 	// EO 화면 출력 담당 클래스
@@ -84,8 +89,8 @@ private:
 	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
 
-	//CameraMode m_cameraMode = CameraMode::TEST_RTSP;	  // 1) RTSP 카메라 모드
-	CameraMode m_cameraMode = CameraMode::DEVICE_PROFILE; // 2) EO/IR 장비 카메라 연동
+	//CameraMode m_cameraMode = CameraMode::TEST_RTSP;	    // 1) RTSP 카메라 모드
+	//CameraMode m_cameraMode = CameraMode::DEVICE_PROFILE; // 2) EO/IR 장비 카메라 연동
 
 public:
 	afx_msg void OnBnClickedButtonConnect();
