@@ -122,8 +122,8 @@ CString CMSSQLManager::GetFieldString(_RecordsetPtr recordset, const wchar_t* fi
 	}
 }
 
-// UnitId 기준 장비 프로파일 조회
-bool CMSSQLManager::LoadDeviceProfile(const CString& unitId, DeviceProfile& outProfile)
+// CameraId 기준 장비 프로파일 조회
+bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& outProfile)
 {
 	try
 	{
@@ -135,13 +135,13 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& unitId, DeviceProfile& outP
 		}
 
 		// SQL Injection 방지를 위해 최소한 작은따옴표 치환
-		CString safeUnitId = unitId;
-		safeUnitId.Replace(_T("'"), _T("''"));
+		CString safeCameraId = cameraId;
+		safeCameraId.Replace(_T("'"), _T("''"));
 
 		CString query;
 		query.Format(
-			_T("SELECT * FROM DeviceProfile WHERE UnitId = N'%s'"),
-			safeUnitId.GetString());
+			_T("SELECT * FROM DeviceProfile WHERE Camera_Id = N'%s'"),
+			safeCameraId.GetString());
 
 		_RecordsetPtr recordset;
 		recordset.CreateInstance(__uuidof(Recordset));
@@ -162,24 +162,24 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& unitId, DeviceProfile& outP
 		}
 
 		// 기본 장비 정보
-		outProfile.unitId = GetFieldString(recordset, L"UnitId");
-		outProfile.siteName = GetFieldString(recordset, L"SiteName");
-		outProfile.deviceModel = GetFieldString(recordset, L"DeviceModel");
+		outProfile.camera_Id = GetFieldString(recordset, L"Camera_Id");
+		outProfile.site_Name = GetFieldString(recordset, L"Site_Name");
+		outProfile.device_Model = GetFieldString(recordset, L"Device_Model");
 
-		outProfile.ccbip = GetFieldString(recordset, L"CcbIp");
-		outProfile.ccbport = GetFieldString(recordset, L"CcbPort");
+		outProfile.ccb_Ip = GetFieldString(recordset, L"Ccb_Ip");
+		outProfile.ccb_Port = GetFieldString(recordset, L"Ccb_Port");
 
 		// EO / Color 카메라 정보
-		outProfile.color.maker = GetFieldString(recordset, L"ColorMaker");
-		outProfile.color.ip = GetFieldString(recordset, L"ColorIp");
-		outProfile.color.id = GetFieldString(recordset, L"ColorId");
-		outProfile.color.pw = GetFieldString(recordset, L"ColorPw");
+		outProfile.color.maker = GetFieldString(recordset, L"Color_Maker");
+		outProfile.color.ip = GetFieldString(recordset, L"Color_Ip");
+		outProfile.color.id = GetFieldString(recordset, L"Color_Id");
+		outProfile.color.pw = GetFieldString(recordset, L"Color_Pw");
 
 		// IR / Thermal 카메라 정보
-		outProfile.thermal.maker = GetFieldString(recordset, L"ThermalMaker");
-		outProfile.thermal.ip = GetFieldString(recordset, L"ThermalIp");
-		outProfile.thermal.id = GetFieldString(recordset, L"ThermalId");
-		outProfile.thermal.pw = GetFieldString(recordset, L"ThermalPw");
+		outProfile.thermal.maker = GetFieldString(recordset, L"Thermal_Maker");
+		outProfile.thermal.ip = GetFieldString(recordset, L"Thermal_Ip");
+		outProfile.thermal.id = GetFieldString(recordset, L"Thermal_Id");
+		outProfile.thermal.pw = GetFieldString(recordset, L"Thermal_Pw");
 
 		recordset->Close();
 

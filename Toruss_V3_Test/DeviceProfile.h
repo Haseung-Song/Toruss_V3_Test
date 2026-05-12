@@ -16,12 +16,12 @@ struct DeviceCamInfo
 // 장비 프로파일 정보
 struct DeviceProfile
 {
-	CString unitId;		// 장비 ID
-	CString siteName;	// 사이트명
-	CString deviceModel;	// 장비 모델
+	CString camera_Id;		// 장비 ID
+	CString site_Name;	    // 사이트명
+	CString device_Model;	// 장비 모델
 
-	CString ccbip;		// CCB IP
-	CString ccbport;		// CCB Port
+	CString ccb_Ip;		    // CCB IP
+	CString ccb_Port;		// CCB Port
 
 	DeviceCamInfo color;	// EO 주간 카메라
 	DeviceCamInfo thermal;	// IR 열화상 카메라
@@ -29,11 +29,12 @@ struct DeviceProfile
 	// 초기화 코드
 	void Clear()
 	{
-		unitId.Empty();
-		siteName.Empty();
-		deviceModel.Empty();
-		ccbip.Empty();
-		ccbport.Empty();
+		camera_Id.Empty();
+		site_Name.Empty();
+		device_Model.Empty();
+
+		ccb_Ip.Empty();
+		ccb_Port.Empty();
 
 		color = DeviceCamInfo();
 		thermal = DeviceCamInfo();

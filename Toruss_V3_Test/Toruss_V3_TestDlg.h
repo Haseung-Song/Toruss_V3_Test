@@ -42,12 +42,24 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
 public:
-	// 왼쪽 EO 카메라 출력 영역
+	// 카메라 선택 ComboBox의 글자 크기 및 글꼴 조절용 Font 객체
+	CFont m_fontCombo;
+	// "장비 선택" Static Text 라벨의 글자 크기 및 글꼴 조절용 Font 객체
+	CFont m_fontLabel;
+	// 카메라 선택 영역 제목 표시용 Static Text 컨트롤
+	// 예: "장비 선택"
+	CStatic m_labelCamera;
+
+public:
+	// 왼쪽   EO 카메라 출력 영역
 	CStatic m_ColorCam;
 
 	// 오른쪽 IR 카메라 출력 영역
 	CStatic m_ThermalCam;
+
+	CComboBox m_comboCamera; // 카메라 선택 ComboBox
 
 private:
 	// EO 화면 출력 담당 클래스
@@ -78,4 +90,5 @@ private:
 public:
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
+
 };

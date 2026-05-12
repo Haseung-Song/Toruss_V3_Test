@@ -1,5 +1,4 @@
-﻿
-// Toruss_V3_TestDlg.cpp: 구현 파일
+﻿// Toruss_V3_TestDlg.cpp: 구현 파일
 //
 
 #include "pch.h"
@@ -29,6 +28,9 @@ void CTorussV3TestDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_STATIC_COLOR_CAM, m_ColorCam); // 왼쪽 화면: EO 주간 카메라
 	DDX_Control(pDX, IDC_STATIC_THERMAL_CAM, m_ThermalCam); // 오른쪽 화면: IR 열화상 카메라
+
+	DDX_Control(pDX, IDC_COMBO_CAMERA, m_comboCamera); // 카메라 선택 ComboBox
+	DDX_Control(pDX, IDC_STATIC_CAMERA_LABEL, m_labelCamera); // "장비 선택" Static Text 라벨
 }
 
 
@@ -54,18 +56,38 @@ BOOL CTorussV3TestDlg::OnInitDialog()
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 
+	m_fontCombo.CreatePointFont(100, _T("맑은 고딕")); // 10pt
+	m_comboCamera.SetFont(&m_fontCombo);
+	m_comboCamera.SetWindowPos(
+		NULL,
+		0, 0,
+		150, 50,   // Width, Height
+		SWP_NOMOVE | SWP_NOZORDER);
+
+	m_fontLabel.CreatePointFont(100, _T("맑은 고딕")); // 10pt
+	m_labelCamera.SetFont(&m_fontLabel);
+
 	// EO Static Control과 출력 View 연결
 	m_ColorCamView.Attach(&m_ColorCam);
 
 	// IR Static Control과 출력 View 연결
 	m_ThermalCamView.Attach(&m_ThermalCam);
 
+	// 카메라 선택 ComboBox 항목 추가
+	m_comboCamera.AddString(_T(" Camera_01"));
+	m_comboCamera.AddString(_T(" Camera_02"));
+	m_comboCamera.AddString(_T(" Camera_03"));
+
+	m_comboCamera.SetCurSel(0); // 기본 선택값: Camera_01
+
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
+
 
 // 대화 상자에 최소화 단추를 추가할 경우 아이콘을 그리려면
 // 아래 코드가 필요합니다.  문서/뷰 모델을 사용하는 MFC 애플리케이션의 경우에는
 // 프레임워크에서 이 작업을 자동으로 수행합니다.
+
 
 void CTorussV3TestDlg::OnPaint()
 {
@@ -101,13 +123,21 @@ HCURSOR CTorussV3TestDlg::OnQueryDragIcon()
 }
 
 
+// CONNECT 버튼 클릭
 void CTorussV3TestDlg::OnBnClickedButtonConnect()
 {
-	// 이미 재생 중이면 중복 실행 방지
-	if (m_isPlaying) return;
+	// 이미 재생 중이면 먼저 중지
+	if (m_isPlaying)
+	{
+		m_isPlaying = false;
 
-	// 재생 상태 ON
-	m_isPlaying = true;
+		if (m_videoThread.joinable())
+			m_videoThread.join(); // 영상 스레드 종료 대기
+
+		// 디코더도 닫기
+		m_eoDecoder.Close();
+		m_irDecoder.Close();
+	}
 
 	// 영상 재생은 UI 스레드가 아니라 별도 스레드에서 실행
 
@@ -132,6 +162,7 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 		m_videoThread =
 			std::thread(&CTorussV3TestDlg::PlayEOIRVideo, this);
 	}
+	m_isPlaying = true; // 다시 선택된 카메라로 재생 시작!
 }
 
 
@@ -216,8 +247,33 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	// MSSQL에서 장비 프로파일 조회
 	DeviceProfile profile;
 
-	// UNIT_0006 장비 정보 조회
-	if (!m_sqlManager.LoadDeviceProfile(_T("UNIT_0006"), profile))
+	int nSel = m_comboCamera.GetCurSel();
+
+	CString strCameraName;
+
+	switch (nSel)
+	{
+	case 0:
+		strCameraName = _T("Camera_01");
+		break;
+
+	case 1:
+		strCameraName = _T("Camera_02");
+		break;
+
+	case 2:
+		strCameraName = _T("Camera_03");
+		break;
+
+	default:
+		AfxMessageBox(_T("카메라를 반드시 선택해주세요."));
+		::CoUninitialize();
+		m_isPlaying = false; // 재생 상태 OFF
+		return;
+	}
+
+	// 선택된 Camera_xx 장비 정보 조회
+	if (!m_sqlManager.LoadDeviceProfile(strCameraName, profile))
 	{
 		AfxMessageBox(_T("장비 프로파일 조회 실패"));
 

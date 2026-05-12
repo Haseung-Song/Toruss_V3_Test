@@ -19,8 +19,8 @@ public:
 	// 연결 상태 확인
 	bool IsConnected() const;
 
-	// UnitId 기준 장비 프로파일 조회
-	bool LoadDeviceProfile(const CString& unitId, DeviceProfile& outProfile);
+	// cameraId 기준 장비 프로파일 조회
+	bool LoadDeviceProfile(const CString& cameraId, DeviceProfile& outProfile);
 
 private:
 	// DB에서 읽은 값을 CString으로 변환
