@@ -82,16 +82,16 @@ private:
 
 private:
 	std::thread m_videoThread; // 영상 재생을 위한 별도 스레드
-	std::atomic<bool> m_isPlaying = false; // 영상 재생 상태 플래그
+	bool m_isPlaying = false; // 영상 재생 상태 플래그
 
 	CMSSQLManager m_sqlManager;
 
 	void PlayTestVideo(); // 테스트 영상 출력 함수
-	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
 
-	//CameraMode m_cameraMode = CameraMode::TEST_RTSP;	    // 1) RTSP 카메라 모드
-	//CameraMode m_cameraMode = CameraMode::DEVICE_PROFILE; // 2) EO/IR 장비 카메라 연동
+	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
+	void ClearEOIRView(); // [EOIR] 및 [RTSP] 영상 초기화 및 검은 화면 출력 함수
+	void StopEOIRVideo(); // [EOIR] 영상 종료 함수
 
 public:
 	afx_msg void OnBnClickedButtonConnect();

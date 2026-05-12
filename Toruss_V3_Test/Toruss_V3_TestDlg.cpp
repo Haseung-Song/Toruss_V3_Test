@@ -190,9 +190,8 @@ void CTorussV3TestDlg::OnDestroy()
 		m_videoThread.join();
 	}
 
-	// 디코더 종료
-	m_eoDecoder.Close();
-	m_irDecoder.Close();
+	m_eoDecoder.Close(); // EO 디코더 종료
+	m_irDecoder.Close(); // IR 디코더 종료
 
 #ifdef _DEBUG
 	FreeConsole(); // 현재 프로그램에 연결된 콘솔 창 해제(닫기)
@@ -210,20 +209,28 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 
 	std::cout << "" << std::endl;
 
-	// 이미 재생 중이면 먼저 중지
+	// 이미 연결/재생 중이면 중복 Connect 방지
 	if (m_isPlaying)
 	{
-		m_isPlaying = false; // 재생 상태 OFF
+		std::cout << "[VIDEO] Already Connecting Or Playing." << std::endl;
+		return;
+	}
 
-		if (m_videoThread.joinable())
-			m_videoThread.join(); // 영상 스레드 종료 대기
+	// 이전 thread 객체가 남아있으면,
+	// Disconnect 또는 연결 실패로 재생 상태가 OFF 된 경우에만 정리
+	if (m_videoThread.joinable())
+	{
+		std::cout << "[THREAD] Previous Thread Detach..." << std::endl;
 
-		// 디코더도 닫기
-		m_eoDecoder.Close();
-		m_irDecoder.Close();
+		m_videoThread.detach();
+
+		std::cout << "[THREAD] Previous Thread Detach Complete." << std::endl;
+		std::cout << "" << std::endl;
 	}
 
 	nSel = m_comboCamera.GetCurSel(); // 현재 ComboBox에서 선택된 카메라 인덱스 가져오기
+
+	m_isPlaying = true; // 새 재생 시작
 
 	std::cout << "[Camera Select] nSel = "
 		<< nSel
@@ -252,13 +259,7 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 		m_videoThread =
 			std::thread(&CTorussV3TestDlg::PlayEOIRVideo, this);
 	}
-	m_isPlaying = true; // 재선택이 된 카메라로 다시 재생을 시작
 
-	std::cout << "" << std::endl;
-
-	std::cout << "[CONNECTED COMPLETE!]" << std::endl;
-
-	std::cout << "========================================" << std::endl;
 }
 
 
@@ -363,12 +364,18 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 
 	default:
 		AfxMessageBox(_T("카메라를 반드시 선택해주세요."));
-		::CoUninitialize();
+
 		m_isPlaying = false; // 재생 상태 OFF
+
+		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
+		::CoUninitialize();
 		return;
 	}
 
-	CT2A selectedCamera(strCameraName, CP_UTF8);
+	// CString(strCameraName)을
+	// ANSI(char*) 문자열로 변환해서
+	// selectedCamera에 저장
+	CT2A selectedCamera(strCameraName, CP_ACP);
 
 	// 현재 선택된 Camera 이름 로그 출력
 	std::cout << "[Selected Camera] "
@@ -380,9 +387,57 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	{
 		AfxMessageBox(_T("장비 프로파일 조회 실패"));
 
+		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
 		::CoUninitialize();
 
 		m_isPlaying = false; // 재생 상태 OFF
+		return;
+	}
+
+	// DB에서 조회한 장비 정보 기반으로 EO RTSP 주소 생성
+	CString eoRtsp = CRtspBuilder::BuildColorRtsp(profile);
+
+	// DB에서 조회한 장비 정보 기반으로 IR RTSP 주소 생성
+	CString irRtsp = CRtspBuilder::BuildThermalRtsp(profile);
+
+	CStringA eoRtspA(eoRtsp);
+	CStringA irRtspA(irRtsp);
+
+	// EO RTSP 디코더 시작
+	m_eoDecoder.Open(std::string(eoRtspA.GetString()));
+
+	// IR RTSP 디코더 시작
+	m_irDecoder.Open(std::string(irRtspA.GetString()));
+
+	// Open()은 내부 디코딩 스레드를 시작하는 함수이므로,
+	// 실제 RTSP 연결 완료까지 시간이 걸릴 수 있음.
+	// 따라서 최대 3초 동안 IsOpened() 상태를 확인하며 대기 필요
+	for (int i = 0; i < 30; i++)
+	{
+		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened())
+			break;
+
+		Sleep(100);
+	}
+
+	// 최대 대기 시간 이후에도 열리지 않은 경우 연결 실패로 판단
+
+	bool bEOOpened = m_eoDecoder.IsOpened(); // EO RTSP 연결 성공 여부 확인
+	bool bIROpened = m_irDecoder.IsOpened(); // IR RTSP 연결 성공 여부 확인
+
+	// EO 또는 IR 중 하나라도 연결 실패 시,
+	// 전체 RTSP 연결 실패로 판단하여 재생 종료 처리
+	if (!bEOOpened || !bIROpened)
+	{
+		AfxMessageBox(_T("EO/IR 카메라 연결 실패"));
+
+		std::cout << "========================================" << std::endl;
+
+		std::cout << "[RTSP CONNECTION FAILED]" << std::endl;
+
+		StopEOIRVideo();
+		ClearEOIRView();
+
 		return;
 	}
 
@@ -416,61 +471,11 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 
 	std::cout << "========================================" << std::endl;
 
-	// DB에서 조회한 장비 정보 기반으로 EO RTSP 주소 생성
-	CString eoRtsp = CRtspBuilder::BuildColorRtsp(profile);
+	std::cout << "" << std::endl;
 
-	// DB에서 조회한 장비 정보 기반으로 IR RTSP 주소 생성
-	CString irRtsp = CRtspBuilder::BuildThermalRtsp(profile);
+	std::cout << "[CONNECTED COMPLETE!]" << std::endl;
 
-	CStringA eoRtspA(eoRtsp);
-	CStringA irRtspA(irRtsp);
-
-	// EO RTSP 디코더 시작
-	m_eoDecoder.Open(std::string(eoRtspA.GetString()));
-
-	// IR RTSP 디코더 시작
-	m_irDecoder.Open(std::string(irRtspA.GetString()));
-
-	// Open()은 내부 디코딩 스레드를 시작하는 함수이므로,
-	// 실제 RTSP 연결 완료까지 시간이 걸릴 수 있음.
-	// 따라서 최대 3초 동안 IsOpened() 상태를 확인하며 대기 필요
-	for (int i = 0; i < 30; i++)
-	{
-		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened())
-			break;
-
-		Sleep(100);
-	}
-
-	// 최대 대기 시간 이후에도 열리지 않은 경우 연결 실패로 판단
-
-	// 1. [EO] 카메라 연결 실패!
-	if (!m_eoDecoder.IsOpened())
-	{
-		AfxMessageBox(_T("EO 카메라 연결 실패"));
-
-		m_eoDecoder.Close();
-		m_irDecoder.Close();
-
-		m_isPlaying = false; // 재생 상태 OFF
-
-		::CoUninitialize();
-		return;
-	}
-
-	// 2. [IR] 카메라 연결 실패!
-	if (!m_irDecoder.IsOpened())
-	{
-		AfxMessageBox(_T("IR 카메라 연결 실패"));
-
-		m_eoDecoder.Close();
-		m_irDecoder.Close();
-
-		m_isPlaying = false; // 재생 상태 OFF
-
-		::CoUninitialize();
-		return;
-	}
+	std::cout << "========================================" << std::endl;
 
 	VideoFrame eoFrame; // EO 최신 프레임 저장 변수
 
@@ -480,28 +485,21 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	while (m_isPlaying)
 	{
 		// EO 최신 프레임 가져오기
-		if (m_eoDecoder.GetLatestFrame(eoFrame))
+		if (m_eoDecoder.IsOpened() && m_eoDecoder.GetLatestFrame(eoFrame))
 		{
 			m_ColorCamView.DrawFrame(eoFrame.bgr);
 		}
 
 		// IR 최신 프레임 가져오기
-		if (m_irDecoder.GetLatestFrame(irFrame))
+		if (m_irDecoder.IsOpened() && m_irDecoder.GetLatestFrame(irFrame))
 		{
 			m_ThermalCamView.DrawFrame(irFrame.bgr);
 		}
 		Sleep(1); // 화면 출력 과부하 방지
 	}
-	// EO 디코더 종료
-	m_eoDecoder.Close();
+	StopEOIRVideo(); // [EOIR] 영상 종료 함수
 
-	// IR 디코더 종료
-	m_irDecoder.Close();
-
-	m_isPlaying = false; // 재생 상태 OFF
-
-	// 현재 스레드의 COM 해제
-	::CoUninitialize();
+	ClearEOIRView(); // [EOIR] 및 [RTSP] 영상 초기화 및 검은 화면 출력 함수
 }
 
 // 테스트 카메라 => [RTSP] 영상 재생
@@ -566,12 +564,12 @@ void CTorussV3TestDlg::PlayRTSPVideo()
 	// 재생 루프
 	while (m_isPlaying)
 	{
-		if (m_eoDecoder.GetLatestFrame(test1Frame))
+		if (m_eoDecoder.IsOpened() && m_eoDecoder.GetLatestFrame(test1Frame))
 		{
 			m_ColorCamView.DrawFrame(test1Frame.bgr);
 		}
 
-		if (m_irDecoder.GetLatestFrame(test2Frame))
+		if (m_irDecoder.IsOpened() && m_irDecoder.GetLatestFrame(test2Frame))
 		{
 			m_ThermalCamView.DrawFrame(test2Frame.bgr);
 		}
@@ -582,6 +580,8 @@ void CTorussV3TestDlg::PlayRTSPVideo()
 	m_irDecoder.Close();
 
 	m_isPlaying = false; // 재생 상태 OFF
+
+	ClearEOIRView(); // [EOIR] 및 [RTSP] 영상 초기화 및 검은 화면 출력 함수
 }
 
 
@@ -592,29 +592,18 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 
 	std::cout << "[DISCONNECT BUTTON CLICK]" << std::endl;
 
-	std::cout << "" << std::endl;
-
-	// 영상 재생 중이 아니면 종료
-	if (!m_isPlaying)
-	{
-		std::cout << "[VIDEO] Already Stopped." << std::endl;
-		return;
-	}
-
 	m_isPlaying = false; // 재생 상태 OFF
 
-	std::cout << "[VIDEO] Stop Signal Send" << std::endl;
+	std::cout << "========================================" << std::endl;
 
-	// 영상 재생 스레드 종료 대기
-	if (m_videoThread.joinable())
-	{
-		std::cout << "[THREAD] Waiting Join..." << std::endl;
+	std::cout << "[DISCONNECT REQUESTED]" << std::endl;
 
-		m_videoThread.join();
+	std::cout << " " << std::endl;
+}
 
-		std::cout << "[THREAD] Join Complete" << std::endl;
-	}
 
+void CTorussV3TestDlg::ClearEOIRView()
+{
 	// [EO] 화면 검정색 초기화
 	{
 		CClientDC dc(&m_ColorCam);
@@ -636,9 +625,20 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 
 		std::cout << "[IR VIEW] Clear Complete" << std::endl;
 	}
-	std::cout << "" << std::endl;
+	std::cout << " " << std::endl;
 
 	std::cout << "[DISCONNECT COMPLETE]" << std::endl;
+}
 
-	std::cout << "========================================" << std::endl;
+
+// [EOIR] 영상 종료 함수
+void CTorussV3TestDlg::StopEOIRVideo()
+{
+	m_eoDecoder.Close(); // EO 디코더 종료
+	m_irDecoder.Close(); // IR 디코더 종료
+
+	m_isPlaying = false; // 재생 상태 OFF
+
+	// 현재 스레드에서 사용한 COM 시스템 정리(해제)
+	::CoUninitialize();
 }
