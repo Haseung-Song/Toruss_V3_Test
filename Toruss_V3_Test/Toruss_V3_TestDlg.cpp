@@ -523,8 +523,8 @@ void CTorussV3TestDlg::PlayRTSPVideo()
 	// 테스트 카메라2 RTSP 디코더 시작
 	m_irDecoder.Open(test2Rtsp);
 
-	// 연결 대기
-	for (int i = 0; i < 30; i++)
+	// 연결 대기 // 최대 5초 대기 필요
+	for (int i = 0; i < 50; i++)
 	{
 		if (m_eoDecoder.IsOpened() &&
 			m_irDecoder.IsOpened())
