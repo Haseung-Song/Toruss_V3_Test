@@ -5,10 +5,12 @@
 #pragma once
 
 #include "CVideoView.h"
-#include <thread>
-#include <atomic>
+
 #include "CRTSPDecoder.h"
 #include "CMSSQLManager.h"
+
+#include <thread>
+#include <atomic>
 
 // [카메라] 연결 모드
 //enum class CameraMode
@@ -32,7 +34,6 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
-
 	// 구현입니다.
 protected:
 	HICON m_hIcon;
@@ -43,6 +44,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	afx_msg void OnDestroy();
 	DECLARE_MESSAGE_MAP()
+
 
 public:
 	// 카메라 선택 ComboBox의 글자 크기 및 글꼴 조절용 Font 객체
@@ -55,6 +57,7 @@ public:
 	// 예: "장비 선택"
 	CStatic m_labelCamera;
 
+
 public:
 	// 왼쪽   EO 카메라 출력 영역
 	CStatic m_ColorCam;
@@ -66,6 +69,7 @@ public:
 
 	// 현재 선택된 카메라 인덱스 (-1: 선택 없음)
 	int nSel = -1;
+
 
 private:
 	// EO 화면 출력 담당 클래스
@@ -80,16 +84,17 @@ private:
 	// IR RTSP 디코더
 	CRTSPDecoder m_irDecoder;
 
-private:
-	std::thread m_videoThread; // 영상 재생을 위한 별도 스레드
-	bool m_isPlaying = false; // 영상 재생 상태 플래그
 
-	CMSSQLManager m_sqlManager;
+private:
+	std::thread m_videoThread; // 영상 재생 별도 스레드
+	bool m_isPlaying = false;  // 영상 재생 상태 플래그
+
+	CMSSQLManager m_sqlManager; // MSSQL 연결 및 장비 프로파일 조회 담당 클래스!
 
 	void PlayTestVideo(); // 테스트 영상 출력 함수
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
-
 	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
+
 	void ClearEOIRView(); // [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
 	void StopEOIRVideo(); // [EOIR] 영상 종료 함수
 
