@@ -4,6 +4,7 @@
 #include <iostream>
 #include <atlconv.h>
 
+
 // 생성자
 CMSSQLManager::CMSSQLManager()
 {
@@ -11,11 +12,13 @@ CMSSQLManager::CMSSQLManager()
 	m_connection = nullptr;
 }
 
+
 // 소멸자
 CMSSQLManager::~CMSSQLManager()
 {
 	Close();
 }
+
 
 // DB 연결
 bool CMSSQLManager::Connect()
@@ -94,6 +97,7 @@ bool CMSSQLManager::Connect()
 
 }
 
+
 // DB 연결 종료
 void CMSSQLManager::Close()
 {
@@ -132,11 +136,13 @@ void CMSSQLManager::Close()
 	m_isConnected = false;
 }
 
+
 // 연결 상태 확인
 bool CMSSQLManager::IsConnected() const
 {
 	return m_isConnected;
 }
+
 
 // DB 필드 값을 CString으로 변환
 CString CMSSQLManager::GetFieldString(_RecordsetPtr recordset, const wchar_t* fieldName)
@@ -173,14 +179,15 @@ CString CMSSQLManager::GetFieldString(_RecordsetPtr recordset, const wchar_t* fi
 
 }
 
-// CameraId 기준 장비 프로파일 조회
-bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& outProfile)
+
+// Camera_Id 기준 장비 프로파일 조회
+bool CMSSQLManager::LoadDeviceProfile(const CString& camera_Id, DeviceProfile& outProfile)
 {
 	try
 	{
 		std::cout << "[DB] LoadDeviceProfile Start" << std::endl;
 
-		CT2A cameraIdA(cameraId, CP_ACP);
+		CT2A cameraIdA(camera_Id, CP_ACP);
 
 		std::cout << "[DB] Camera_Id : "
 			<< cameraIdA
@@ -200,13 +207,13 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 		}
 
 		// SQL Injection 방지를 위해 최소한 작은따옴표 치환
-		CString safeCameraId = cameraId;
-		safeCameraId.Replace(_T("'"), _T("''"));
+		CString safeCamera_Id = camera_Id;
+		safeCamera_Id.Replace(_T("'"), _T("''"));
 
 		CString query;
 		query.Format(
 			_T("SELECT * FROM DeviceProfile WHERE Camera_Id = N'%s'"),
-			safeCameraId.GetString());
+			safeCamera_Id.GetString());
 
 		CT2A queryA(query, CP_ACP);
 
@@ -242,6 +249,7 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 			std::cout << "[DB ERROR] DeviceProfile Not Found" << std::endl;
 
 			recordset->Close();
+
 			return false;
 		}
 
@@ -268,6 +276,8 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 		recordset->Close();
 
 		std::cout << "[DB] LoadDeviceProfile Success" << std::endl;
+
+		std::cout << "========================================" << std::endl;
 
 		return true;
 	}

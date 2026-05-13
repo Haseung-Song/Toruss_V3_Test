@@ -605,10 +605,7 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 		std::cout << "[VIDEO] Already Stopped." << std::endl;
 		return;
 	}
-
 	m_isPlaying = false; // 재생 상태 OFF
-
-	std::cout << "========================================" << std::endl;
 }
 
 
@@ -619,7 +616,6 @@ void CTorussV3TestDlg::ClearEOIRView()
 	{
 		CClientDC dc(&m_ColorCam);
 		CRect rect;
-
 		m_ColorCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 
@@ -630,7 +626,6 @@ void CTorussV3TestDlg::ClearEOIRView()
 	{
 		CClientDC dc(&m_ThermalCam);
 		CRect rect;
-
 		m_ThermalCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 
