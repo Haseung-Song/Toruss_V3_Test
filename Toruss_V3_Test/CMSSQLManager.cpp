@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "CMSSQLManager.h"
 
+#include <iostream>
+#include <atlconv.h>
+
 // 생성자
 CMSSQLManager::CMSSQLManager()
 {
@@ -19,31 +22,31 @@ bool CMSSQLManager::Connect()
 {
 	try
 	{
-		OutputDebugString(_T("[DB] Connect 시작\r\n"));
+		std::cout << "[DB] Connect Start" << std::endl;
 
 		if (m_isConnected && m_connection != nullptr)
 		{
-			OutputDebugString(_T("[DB] 이미 연결됨\r\n"));
+			std::cout << "[DB] Already Connected" << std::endl;
 			return true;
 		}
 
-		OutputDebugString(_T("[DB] Connection CreateInstance 시작\r\n"));
+		std::cout << "[DB] Connection CreateInstance Start" << std::endl;
 
 		HRESULT hr =
 			m_connection.CreateInstance(__uuidof(Connection));
 
 		if (FAILED(hr))
 		{
-			CString msg;
-			msg.Format(_T("[DB] CreateInstance 실패: 0x%08X\r\n"), hr);
-
-			OutputDebugString(msg);
-			AfxMessageBox(msg);
+			std::cout << "[DB ERROR] CreateInstance Failed : 0x"
+				<< std::hex
+				<< hr
+				<< std::dec
+				<< std::endl;
 
 			return false;
 		}
 
-		OutputDebugString(_T("[DB] CreateInstance 성공\r\n"));
+		std::cout << "[DB] CreateInstance Success" << std::endl;
 
 		_bstr_t connStr =
 			L"Provider=MSOLEDBSQL;"
@@ -52,11 +55,11 @@ bool CMSSQLManager::Connect()
 			L"Integrated Security=SSPI;"
 			L"TrustServerCertificate=True;";
 
-		OutputDebugString(_T("[DB] Open 시작\r\n"));
+		std::cout << "[DB] Open Start" << std::endl;
 
 		m_connection->Open(connStr, L"", L"", adConnectUnspecified);
 
-		OutputDebugString(_T("[DB] Open 성공\r\n"));
+		std::cout << "[DB] Open Success" << std::endl;
 
 		m_isConnected = true;
 
@@ -64,17 +67,31 @@ bool CMSSQLManager::Connect()
 	}
 	catch (_com_error& e)
 	{
-		CString msg;
+		std::cout << "[DB ERROR] Connect Exception" << std::endl;
 
-		msg.Format(
-			_T("[DB] Connect 예외 발생\n%s"),
-			(LPCTSTR)e.Description());
+		std::cout << "[DB ERROR] Description : "
+			<< CT2A((LPCTSTR)e.Description(), CP_ACP)
+			<< std::endl;
 
-		OutputDebugString(msg);
-		AfxMessageBox(msg);
+		std::cout << "[DB ERROR] Message     : "
+			<< CT2A(e.ErrorMessage(), CP_ACP)
+			<< std::endl;
+
+		m_isConnected = false;
+		m_connection = nullptr;
 
 		return false;
 	}
+	catch (...)
+	{
+		std::cout << "[DB ERROR] Unknown Connect Exception" << std::endl;
+
+		m_isConnected = false;
+		m_connection = nullptr;
+
+		return false;
+	}
+
 }
 
 // DB 연결 종료
@@ -86,14 +103,31 @@ void CMSSQLManager::Close()
 		{
 			if (m_connection->State == adStateOpen)
 			{
-				m_connection->Close();
-			}
+				std::cout << "[DB] Close Start" << std::endl;
 
+				m_connection->Close();
+
+				std::cout << "[DB] Close Complete" << std::endl;
+			}
 			m_connection = nullptr;
 		}
+
+	}
+	catch (_com_error& e)
+	{
+		std::cout << "[DB ERROR] Close Exception" << std::endl;
+
+		std::cout << "[DB ERROR] Description : "
+			<< CT2A((LPCTSTR)e.Description(), CP_ACP)
+			<< std::endl;
+
+		std::cout << "[DB ERROR] Message     : "
+			<< CT2A(e.ErrorMessage(), CP_ACP)
+			<< std::endl;
 	}
 	catch (...)
 	{
+		std::cout << "[DB ERROR] Unknown Close Exception" << std::endl;
 	}
 	m_isConnected = false;
 }
@@ -116,10 +150,27 @@ CString CMSSQLManager::GetFieldString(_RecordsetPtr recordset, const wchar_t* fi
 
 		return CString((LPCTSTR)(_bstr_t)value);
 	}
-	catch (...)
+	catch (_com_error& e)
 	{
+		std::cout << "[DB ERROR] GetFieldString Exception : "
+			<< CT2A(fieldName, CP_ACP)
+			<< std::endl;
+
+		std::cout << "[DB ERROR] Description : "
+			<< CT2A((LPCTSTR)e.Description(), CP_ACP)
+			<< std::endl;
+
 		return _T("");
 	}
+	catch (...)
+	{
+		std::cout << "[DB ERROR] Unknown GetFieldString Exception : "
+			<< CT2A(fieldName, CP_ACP)
+			<< std::endl;
+
+		return _T("");
+	}
+
 }
 
 // CameraId 기준 장비 프로파일 조회
@@ -127,11 +178,25 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 {
 	try
 	{
+		std::cout << "[DB] LoadDeviceProfile Start" << std::endl;
+
+		CT2A cameraIdA(cameraId, CP_ACP);
+
+		std::cout << "[DB] Camera_Id : "
+			<< cameraIdA
+			<< std::endl;
+
 		// DB 미연결 상태면 연결 시도
 		if (!IsConnected())
 		{
+			std::cout << "[DB] Not Connected. Try Connect..." << std::endl;
+
 			if (!Connect())
+			{
+				std::cout << "[DB ERROR] Connect Failed" << std::endl;
 				return false;
+			}
+
 		}
 
 		// SQL Injection 방지를 위해 최소한 작은따옴표 치환
@@ -143,8 +208,25 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 			_T("SELECT * FROM DeviceProfile WHERE Camera_Id = N'%s'"),
 			safeCameraId.GetString());
 
+		CT2A queryA(query, CP_ACP);
+
+		std::cout << "[DB] Query : "
+			<< queryA
+			<< std::endl;
+
 		_RecordsetPtr recordset;
-		recordset.CreateInstance(__uuidof(Recordset));
+		HRESULT hr = recordset.CreateInstance(__uuidof(Recordset));
+
+		if (FAILED(hr))
+		{
+			std::cout << "[DB ERROR] Recordset CreateInstance Failed : 0x"
+				<< std::hex
+				<< hr
+				<< std::dec
+				<< std::endl;
+
+			return false;
+		}
 
 		// 쿼리 실행
 		recordset->Open(
@@ -157,6 +239,8 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 		// 조회 결과 없음
 		if (recordset->ADOEOF)
 		{
+			std::cout << "[DB ERROR] DeviceProfile Not Found" << std::endl;
+
 			recordset->Close();
 			return false;
 		}
@@ -183,14 +267,29 @@ bool CMSSQLManager::LoadDeviceProfile(const CString& cameraId, DeviceProfile& ou
 
 		recordset->Close();
 
+		std::cout << "[DB] LoadDeviceProfile Success" << std::endl;
+
 		return true;
 	}
 	catch (_com_error& e)
 	{
-		CString msg;
-		msg.Format(_T("[CMSSQLManager] LoadDeviceProfile 실패: %s\r\n"), e.ErrorMessage());
-		OutputDebugString(msg);
+		std::cout << "[DB ERROR] LoadDeviceProfile Exception" << std::endl;
+
+		std::cout << "[DB ERROR] Description : "
+			<< CT2A((LPCTSTR)e.Description(), CP_ACP)
+			<< std::endl;
+
+		std::cout << "[DB ERROR] Message     : "
+			<< CT2A(e.ErrorMessage(), CP_ACP)
+			<< std::endl;
 
 		return false;
 	}
+	catch (...)
+	{
+		std::cout << "[DB ERROR] Unknown LoadDeviceProfile Exception" << std::endl;
+
+		return false;
+	}
+
 }

@@ -445,7 +445,6 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		std::cout << "[RTSP CONNECTION FAILED]" << std::endl;
 
 		StopEOIRVideo();
-
 		ClearEOIRView();
 
 		return;
@@ -619,7 +618,6 @@ void CTorussV3TestDlg::ClearEOIRView()
 	{
 		CClientDC dc(&m_ColorCam);
 		CRect rect;
-
 		m_ColorCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 
@@ -630,7 +628,6 @@ void CTorussV3TestDlg::ClearEOIRView()
 	{
 		CClientDC dc(&m_ThermalCam);
 		CRect rect;
-
 		m_ThermalCam.GetClientRect(&rect);
 		dc.FillSolidRect(rect, RGB(0, 0, 0));
 

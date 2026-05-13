@@ -90,7 +90,7 @@ private:
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
 
 	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
-	void ClearEOIRView(); // [EOIR] 및 [RTSP] 영상 초기화 및 검은 화면 출력 함수
+	void ClearEOIRView(); // [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
 	void StopEOIRVideo(); // [EOIR] 영상 종료 함수
 
 public:
