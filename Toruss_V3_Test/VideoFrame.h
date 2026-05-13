@@ -36,4 +36,5 @@ struct VideoFrame
 		pts = 0;
 		frameNumber = 0;
 	}
+
 };

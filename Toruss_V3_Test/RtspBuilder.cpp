@@ -6,8 +6,7 @@ CString CRtspBuilder::MakeRtsp(const DeviceCamInfo& cam, const CString& path)
 {
 	CString url;
 
-	// 최종 RTSP 주소 형식:
-	// rtsp://ID:PW@IP:554/PATH
+	// 최종 RTSP 주소 형식: rtsp://ID:PW@IP:554/PATH
 	url.Format(
 		_T("rtsp://%s:%s@%s:%d/%s"),
 		cam.id.GetString(),
@@ -18,6 +17,7 @@ CString CRtspBuilder::MakeRtsp(const DeviceCamInfo& cam, const CString& path)
 
 	return url;
 }
+
 
 // EO 주간 카메라 RTSP 주소 생성
 CString CRtspBuilder::BuildColorRtsp(const DeviceProfile& profile)
@@ -35,6 +35,7 @@ CString CRtspBuilder::BuildColorRtsp(const DeviceProfile& profile)
 	// SONY 또는 기타 EO 카메라 기본값
 	return MakeRtsp(profile.color, _T("profile2/media.smp"));
 }
+
 
 // IR 열화상 카메라 RTSP 주소 생성
 CString CRtspBuilder::BuildThermalRtsp(const DeviceProfile& profile)

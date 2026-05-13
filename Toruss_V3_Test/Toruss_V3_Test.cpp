@@ -11,7 +11,6 @@
 #define new DEBUG_NEW
 #endif
 
-
 // CTorussV3TestApp
 
 BEGIN_MESSAGE_MAP(CTorussV3TestApp, CWinApp)
@@ -42,6 +41,7 @@ BOOL CTorussV3TestApp::InitInstance()
 	// InitCommonControlsEx()를 사용하지 않으면 창을 만들 수 없습니다.
 	INITCOMMONCONTROLSEX InitCtrls;
 	InitCtrls.dwSize = sizeof(InitCtrls);
+
 	// 응용 프로그램에서 사용할 모든 공용 컨트롤 클래스를 포함하도록
 	// 이 항목을 설정하십시오.
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
@@ -52,7 +52,7 @@ BOOL CTorussV3TestApp::InitInstance()
 
 	// 대화 상자에 셸 트리 뷰 또는
 	// 셸 목록 뷰 컨트롤이 포함되어 있는 경우 셸 관리자를 만듭니다.
-	CShellManager *pShellManager = new CShellManager;
+	CShellManager* pShellManager = new CShellManager;
 
 	// MFC 컨트롤의 테마를 사용하기 위해 "Windows 원형" 비주얼 관리자 활성화
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
@@ -71,13 +71,11 @@ BOOL CTorussV3TestApp::InitInstance()
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
-		// TODO: 여기에 [확인]을 클릭하여 대화 상자가 없어질 때 처리할
-		//  코드를 배치합니다.
+		// TODO: 여기에 [확인]을 클릭하여 대화 상자가 없어질 때 처리할 코드를 배치합니다.
 	}
 	else if (nResponse == IDCANCEL)
 	{
-		// TODO: 여기에 [취소]를 클릭하여 대화 상자가 없어질 때 처리할
-		//  코드를 배치합니다.
+		// TODO: 여기에 [취소]를 클릭하여 대화 상자가 없어질 때 처리할 코드를 배치합니다.
 	}
 	else if (nResponse == -1)
 	{
@@ -99,4 +97,3 @@ BOOL CTorussV3TestApp::InitInstance()
 	// 반환합니다.
 	return FALSE;
 }
-

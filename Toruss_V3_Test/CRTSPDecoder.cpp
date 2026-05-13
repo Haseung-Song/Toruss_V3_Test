@@ -3,8 +3,8 @@
 
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avutil.lib")
 #pragma comment(lib, "swscale.lib")
+#pragma comment(lib, "avutil.lib")
 
 // 생성자
 CRTSPDecoder::CRTSPDecoder()
@@ -12,6 +12,7 @@ CRTSPDecoder::CRTSPDecoder()
 	// FFmpeg 네트워크 기능 초기화
 	avformat_network_init();
 }
+
 
 // 소멸자
 CRTSPDecoder::~CRTSPDecoder()
@@ -21,6 +22,7 @@ CRTSPDecoder::~CRTSPDecoder()
 	// FFmpeg 네트워크 기능 해제
 	avformat_network_deinit();
 }
+
 
 // RTSP 열기
 bool CRTSPDecoder::Open(const std::string& url)
@@ -38,6 +40,7 @@ bool CRTSPDecoder::Open(const std::string& url)
 
 	return true;
 }
+
 
 // RTSP 닫기
 void CRTSPDecoder::Close()
@@ -60,6 +63,7 @@ void CRTSPDecoder::Close()
 	m_opened = false;
 }
 
+
 // 최신 프레임 가져오기
 bool CRTSPDecoder::GetLatestFrame(VideoFrame& outFrame)
 {
@@ -78,11 +82,13 @@ bool CRTSPDecoder::GetLatestFrame(VideoFrame& outFrame)
 	return true;
 }
 
+
 // 연결 여부
 bool CRTSPDecoder::IsOpened() const
 {
 	return m_opened;
 }
+
 
 // 디코딩 스레드
 void CRTSPDecoder::DecodeThreadProc()
@@ -371,6 +377,7 @@ void CRTSPDecoder::DecodeThreadProc()
 	m_opened = false;
 }
 
+
 // 디코딩된 프레임 처리
 bool CRTSPDecoder::ProcessDecodedFrame(AVFrame* frame)
 {
@@ -409,6 +416,5 @@ bool CRTSPDecoder::ProcessDecodedFrame(AVFrame* frame)
 		std::lock_guard<std::mutex> lock(m_frameMtx);
 		m_latestFrame = videoFrame;
 	}
-
 	return true;
 }

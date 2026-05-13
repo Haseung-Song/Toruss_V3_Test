@@ -6,3 +6,4 @@
 // WinSDKVer.h를 포함하고 _WIN32_WINNT 매크로를 지원하려는 플랫폼으로 설정하십시오.
 
 #include <SDKDDKVer.h>
+

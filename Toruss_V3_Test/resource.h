@@ -11,6 +11,7 @@
 #define IDC_COMBO_CAMERA                1004
 #define IDC_STATIC_CAMERA_LABEL         1005
 
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

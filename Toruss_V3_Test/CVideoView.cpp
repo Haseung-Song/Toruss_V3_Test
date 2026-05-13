@@ -4,15 +4,16 @@
 // 생성자
 CVideoView::CVideoView()
 {
-	// 초기에는 연결된 Static Control 없음
-	m_pStatic = nullptr;
+	m_pStatic = nullptr; // 초기에는 연결된 Static Control 없음
 }
+
 
 // Static Control 연결
 void CVideoView::Attach(CStatic* pStatic)
 {
 	m_pStatic = pStatic;
 }
+
 
 // 영상 프레임 출력
 void CVideoView::DrawFrame(const cv::Mat& frame)
@@ -21,7 +22,7 @@ void CVideoView::DrawFrame(const cv::Mat& frame)
 	if (m_pStatic == nullptr)
 		return;
 
-	// 비어있는 프레임이면 종료
+	// 비어있는 프레임 => 종료
 	if (frame.empty())
 		return;
 
@@ -42,8 +43,8 @@ void CVideoView::DrawFrame(const cv::Mat& frame)
 		0,
 		cv::INTER_LINEAR);
 
-	// 24bit는 한 줄 바이트 정렬 문제로 대각선 찢김이 생길 수 있음
-	// 그래서 32bit BGRA로 변환해서 출력
+	// 24bit는 한 줄 바이트 정렬 문제로 대각선 찢김 현상 발생 가능
+	// 그래서, 32bit BGRA로 변환해서 출력
 	cv::Mat bgraFrame;
 
 	if (resizedFrame.channels() == 3)

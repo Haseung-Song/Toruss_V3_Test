@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "pch.h"
 #include <afxstr.h>
 
@@ -39,4 +38,5 @@ struct DeviceProfile
 		color = DeviceCamInfo();
 		thermal = DeviceCamInfo();
 	}
+
 };
