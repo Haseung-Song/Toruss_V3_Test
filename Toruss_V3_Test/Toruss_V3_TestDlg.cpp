@@ -216,24 +216,13 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 		return;
 	}
 
-	// 이전 thread 객체가 남아있으면,
-	// Disconnect 또는 연결 실패로 재생 상태가 OFF 된 경우에만 정리
-	if (m_videoThread.joinable())
-	{
-		std::cout << "[THREAD] Previous Thread Detach..." << std::endl;
-
-		m_videoThread.detach();
-
-		std::cout << "[THREAD] Previous Thread Detach Complete." << std::endl;
-		std::cout << "" << std::endl;
-	}
-
 	nSel = m_comboCamera.GetCurSel(); // 현재 ComboBox에서 선택된 카메라 인덱스 가져오기
 
 	m_isPlaying = true; // 새 재생 시작
 
 	std::cout << "[Camera Select] nSel = "
 		<< nSel
+		<< std::endl
 		<< std::endl;
 
 	// 영상 재생은 UI 스레드가 아니라 별도 스레드에서 실행
@@ -382,6 +371,8 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		<< selectedCamera
 		<< std::endl;
 
+	std::cout << "========================================" << std::endl;
+
 	// 선택된 Camera_xx 장비 정보 조회
 	if (!m_sqlManager.LoadDeviceProfile(strCameraName, profile))
 	{
@@ -445,7 +436,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 
 	std::cout << "[EO / IR Device Profile Information]" << std::endl;
 
-	std::cout << "========================================" << std::endl;
+	std::cout << " " << std::endl;
 
 	CT2A cameraId(profile.camera_Id, CP_ACP);
 	CT2A siteName(profile.site_Name, CP_ACP);
@@ -469,9 +460,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	std::cout << "8. Thermal_Maker : " << thermalMaker << std::endl;
 	std::cout << "9. Thermal_Ip    : " << thermalIp << std::endl;
 
-	std::cout << "========================================" << std::endl;
-
-	std::cout << "" << std::endl;
+	std::cout << " " << std::endl;
 
 	std::cout << "[CONNECTED COMPLETE!]" << std::endl;
 
@@ -553,8 +542,6 @@ void CTorussV3TestDlg::PlayRTSPVideo()
 		std::cout << "[Test Camera 2 RTSP Connect Fail! Check it out.]" << std::endl;
 	}
 
-	std::cout << " " << std::endl;
-
 	// test1 프레임
 	VideoFrame test1Frame;
 
@@ -592,13 +579,16 @@ void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
 
 	std::cout << "[DISCONNECT BUTTON CLICK]" << std::endl;
 
+	std::cout << " " << std::endl;
+
 	m_isPlaying = false; // 재생 상태 OFF
 
+	// 영상 스레드 종료 대기
+	if (m_videoThread.joinable())
+	{
+		m_videoThread.join();
+	}
 	std::cout << "========================================" << std::endl;
-
-	std::cout << "[DISCONNECT REQUESTED]" << std::endl;
-
-	std::cout << " " << std::endl;
 }
 
 
