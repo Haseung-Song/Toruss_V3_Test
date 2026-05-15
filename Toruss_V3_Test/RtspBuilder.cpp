@@ -1,3 +1,7 @@
+
+// CRtspBuilder.cpp: 구현 파일
+//
+
 #include "pch.h"
 #include "RtspBuilder.h"
 
@@ -6,7 +10,8 @@ CString CRtspBuilder::MakeRtsp(const DeviceCamInfo& cam, const CString& path)
 {
 	CString url;
 
-	// 최종 RTSP 주소 형식: rtsp://ID:PW@IP:554/PATH
+	// 최종 RTSP 주소 형식: 
+	// rtsp://ID:PW@IP:554/PATH
 	url.Format(
 		_T("rtsp://%s:%s@%s:%d/%s"),
 		cam.id.GetString(),

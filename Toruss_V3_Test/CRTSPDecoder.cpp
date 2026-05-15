@@ -1,3 +1,7 @@
+
+// CRTSPDecoder.cpp: 구현 파일
+//
+
 #include "pch.h"
 #include "CRTSPDecoder.h"
 
@@ -27,8 +31,13 @@ CRTSPDecoder::~CRTSPDecoder()
 // RTSP 열기
 bool CRTSPDecoder::Open(const std::string& url)
 {
-	// 기존 연결이 있으면 먼저 종료
-	Close();
+	// 이전 [Decode Thread] 객체가 아직 정리되지 않은 상태이면 새 [Open] 방지
+	// [join() 함수]를 여기서 호출하면 [UI]가 멈출 수 있으므로 [false]만 반환
+	if (m_decodeThread.joinable())
+	{
+		std::cout << "[DECODER] Previous Decode Thread Exists." << std::endl;
+		return false;
+	}
 
 	m_url = url;
 	m_running = true;
@@ -48,10 +57,11 @@ void CRTSPDecoder::Close()
 	// 스레드 루프 종료 요청
 	m_running = false;
 
-	// 스레드 종료 대기
+	// 디코딩 스레드가 [FFmpeg] 내부 [read]에서 대기 중일 수 있으므로
+	// [UI] 멈춤 방지를 위해 [join] 대신 [detach] 처리 (임시 방편!!!)
 	if (m_decodeThread.joinable())
 	{
-		m_decodeThread.join();
+		m_decodeThread.detach();
 	}
 
 	// 최신 프레임 초기화
@@ -59,7 +69,52 @@ void CRTSPDecoder::Close()
 		std::lock_guard<std::mutex> lock(m_frameMtx);
 		m_latestFrame.Clear();
 	}
+	m_opened = false;
+}
 
+
+// FFmpeg 내부 자원 정리
+void CRTSPDecoder::Cleanup()
+{
+	if (m_bgrBuffer)
+	{
+		av_free(m_bgrBuffer);
+		m_bgrBuffer = nullptr;
+	}
+
+	if (m_bgrFrame)
+	{
+		av_frame_free(&m_bgrFrame);
+	}
+
+	if (m_decodedFrame)
+	{
+		av_frame_free(&m_decodedFrame);
+	}
+
+	if (m_packet)
+	{
+		av_packet_free(&m_packet);
+	}
+
+	if (m_swsCtx)
+	{
+		sws_freeContext(m_swsCtx);
+		m_swsCtx = nullptr;
+	}
+
+	if (m_codecCtx)
+	{
+		avcodec_free_context(&m_codecCtx);
+	}
+
+	if (m_fmtCtx)
+	{
+		avformat_close_input(&m_fmtCtx);
+	}
+
+	m_codec = nullptr;
+	m_videoStreamIndex = -1;
 	m_opened = false;
 }
 
@@ -115,6 +170,7 @@ void CRTSPDecoder::DecodeThreadProc()
 		av_dict_free(&options);
 		m_running = false;
 		m_opened = false;
+
 		return;
 	}
 
@@ -127,7 +183,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] avformat_open_input 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -138,7 +197,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] avformat_find_stream_info 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -158,7 +220,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 비디오 스트림 없음\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -173,7 +238,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 디코더 찾기 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -184,7 +252,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 코덱 컨텍스트 생성 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -195,7 +266,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 코덱 파라미터 복사 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -206,7 +280,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 디코더 열기 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -219,7 +296,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 패킷/프레임 할당 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -230,7 +310,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] 영상 크기 오류\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -245,7 +328,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] BGR 버퍼 크기 계산 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -256,7 +342,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] BGR 버퍼 할당 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -274,7 +363,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] av_image_fill_arrays 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -295,7 +387,10 @@ void CRTSPDecoder::DecodeThreadProc()
 	{
 		OutputDebugString(L"[CRTSPDecoder] sws_getContext 실패\r\n");
 
-		Close();
+		Cleanup();
+		m_running = false;
+		m_opened = false;
+
 		return;
 	}
 
@@ -342,39 +437,9 @@ void CRTSPDecoder::DecodeThreadProc()
 			// 디코딩된 프레임 처리
 			ProcessDecodedFrame(m_decodedFrame);
 		}
+
 	}
-
-	// 루프 종료 후 자원 해제
-	if (m_bgrBuffer)
-	{
-		av_free(m_bgrBuffer);
-		m_bgrBuffer = nullptr;
-	}
-
-	if (m_bgrFrame)
-		av_frame_free(&m_bgrFrame);
-
-	if (m_decodedFrame)
-		av_frame_free(&m_decodedFrame);
-
-	if (m_packet)
-		av_packet_free(&m_packet);
-
-	if (m_swsCtx)
-	{
-		sws_freeContext(m_swsCtx);
-		m_swsCtx = nullptr;
-	}
-
-	if (m_codecCtx)
-		avcodec_free_context(&m_codecCtx);
-
-	if (m_fmtCtx)
-		avformat_close_input(&m_fmtCtx);
-
-	m_codec = nullptr;
-	m_videoStreamIndex = -1;
-	m_opened = false;
+	Cleanup(); // 루프 종료 후 자원 해제
 }
 
 

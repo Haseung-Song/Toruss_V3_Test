@@ -191,6 +191,7 @@
   <ItemGroup>
     <ClInclude Include="CMSSQLManager.h" />
     <ClInclude Include="CRTSPDecoder.h" />
+    <ClInclude Include="CTcpClient.h" />
     <ClInclude Include="CVideoView.h" />
     <ClInclude Include="DeviceProfile.h" />
     <ClInclude Include="framework.h" />
@@ -205,6 +206,7 @@
   <ItemGroup>
     <ClCompile Include="CMSSQLManager.cpp" />
     <ClCompile Include="CRTSPDecoder.cpp" />
+    <ClCompile Include="CTcpClient.cpp" />
     <ClCompile Include="CVideoView.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

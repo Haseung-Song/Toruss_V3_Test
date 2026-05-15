@@ -7,11 +7,11 @@
 #include "Toruss_V3_Test.h"
 #include "Toruss_V3_TestDlg.h"
 
+#include <atlconv.h>
 #include <iostream>
 
 #include "afxdialogex.h"
 #include "RtspBuilder.h"
-#include <atlconv.h>
 
 #include <opencv2/core/utils/logger.hpp>
 
@@ -34,11 +34,14 @@ void CTorussV3TestDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 
-	DDX_Control(pDX, IDC_STATIC_COLOR_CAM, m_ColorCam); // 왼쪽 화면: EO 주간 카메라
-	DDX_Control(pDX, IDC_STATIC_THERMAL_CAM, m_ThermalCam); // 오른쪽 화면: IR 열화상 카메라
+	DDX_Control(pDX, IDC_STATIC_COLOR_CAM, m_ColorCam);       // 왼쪽   화면: [EO] 주간   카메라
+	DDX_Control(pDX, IDC_STATIC_THERMAL_CAM, m_ThermalCam);   // 오른쪽 화면: [IR] 열화상 카메라
 
-	DDX_Control(pDX, IDC_COMBO_CAMERA, m_comboCamera); // 카메라 선택 ComboBox
-	DDX_Control(pDX, IDC_STATIC_CAMERA_LABEL, m_labelCamera); // "장비 선택" Static Text 라벨
+	DDX_Control(pDX, IDC_COMBO_CAMERA, m_comboCamera);        // 카메라 선택 ComboBox
+	DDX_Control(pDX, IDC_STATIC_CAMERA_LABEL, m_labelCamera); // 장비   선택 Static Text 라벨
+
+	DDX_Control(pDX, IDC_IPADDRESS_TCP, m_ipTcpAddress);      // TCP 서버 IP        Address Control 변수 연결
+	DDX_Control(pDX, IDC_EDIT_TCP_PORT, m_editTcpPort);       // TCP 서버 Port 입력 Edit Control UI 변수 연결
 }
 
 
@@ -46,8 +49,13 @@ BEGIN_MESSAGE_MAP(CTorussV3TestDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_DESTROY()
+
 	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CTorussV3TestDlg::OnBnClickedButtonConnect)
 	ON_BN_CLICKED(IDC_BUTTON_DISCONNECT, &CTorussV3TestDlg::OnBnClickedButtonDisconnect)
+
+	ON_BN_CLICKED(IDC_BUTTON_TCP_CONNECT, &CTorussV3TestDlg::OnBnClickedButtonTcpConnect)
+	ON_BN_CLICKED(IDC_BUTTON_TCP_DISCONNECT, &CTorussV3TestDlg::OnBnClickedButtonTcpDisconnect)
+	ON_BN_CLICKED(IDC_BUTTON_SEND_TEST, &CTorussV3TestDlg::OnBnClickedButtonSendTest)
 END_MESSAGE_MAP()
 
 
@@ -104,16 +112,40 @@ BOOL CTorussV3TestDlg::OnInitDialog()
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 
+	// Camera ComboBox 폰트 생성
 	m_fontCombo.CreatePointFont(100, _T("맑은 고딕")); // 10pt
+
+	// Camera ComboBox 폰트 적용
 	m_comboCamera.SetFont(&m_fontCombo);
+
+	// Camera ComboBox 크기 조절
 	m_comboCamera.SetWindowPos(
 		NULL,
 		0, 0,
 		150, 50,   // Width, Height
 		SWP_NOMOVE | SWP_NOZORDER);
 
+	// 카메라 선택 Static Text 폰트 생성
 	m_fontLabel.CreatePointFont(100, _T("맑은 고딕")); // 10pt
+
+	// 카메라 선택 Static Text 폰트 적용
 	m_labelCamera.SetFont(&m_fontLabel);
+
+	// TCP [IP / Port] UI 폰트 생성
+	m_fontTcp.CreatePointFont(
+		110, _T("맑은 고딕")); // 11pt, "맑은 고딕"
+
+	// TCP IP Address Control 폰트 적용
+	m_ipTcpAddress.SetFont(&m_fontTcp);
+
+	// TCP Port Edit Control 폰트 적용
+	m_editTcpPort.SetFont(&m_fontTcp);
+
+	// TCP Port Edit Control 왼쪽 마진 설정
+	m_editTcpPort.SendMessage(
+		EM_SETMARGINS,
+		EC_LEFTMARGIN,
+		MAKELPARAM(10, 0));
 
 	// EO Static Control과 출력 View 연결
 	m_ColorCamView.Attach(&m_ColorCam);
@@ -134,6 +166,12 @@ BOOL CTorussV3TestDlg::OnInitDialog()
 	m_comboCamera.AddString(_T(" Camera_03"));
 
 	m_comboCamera.SetCurSel(0); // 기본 선택값: Camera_00
+
+	// TCP 서버 기본 IP 설정 (127. 0. 0. 1);
+	m_ipTcpAddress.SetAddress(127, 0, 0, 1);
+
+	// TCP 서버 기본 Port 설정 (포트 2000번)
+	m_editTcpPort.SetWindowText(_T("2000"));
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -202,7 +240,7 @@ void CTorussV3TestDlg::OnDestroy()
 }
 
 
-// CONNECT 버튼 클릭
+// [CONNECT] 버튼 클릭
 void CTorussV3TestDlg::OnBnClickedButtonConnect()
 {
 	std::cout << "========================================" << std::endl;
@@ -211,24 +249,14 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 
 	std::cout << "" << std::endl;
 
-	// 이미 연결/재생 중이면 중복 Connect 방지
+	// 이미 연결 또는 재생 중이면 중복 Connect 방지
 	if (m_isPlaying)
 	{
 		std::cout << "[VIDEO] Already Connecting Or Playing." << std::endl;
 		return;
 	}
 
-	// 이전 스레드 함수가 끝났지만 thread 객체가 남아있으면 정리
-	if (m_videoThread.joinable())
-	{
-		std::cout << "[THREAD] Previous Thread Join..." << std::endl;
-
-		m_videoThread.join();
-
-		std::cout << "[THREAD] Previous Thread Join Complete." << std::endl;
-
-		std::cout << "" << std::endl;
-	}
+	JoinVidThread(); // [Video] [Thread join] 처리 함수
 
 	nSel = m_comboCamera.GetCurSel(); // 현재 ComboBox에서 선택된 카메라 인덱스 가져오기
 
@@ -266,6 +294,7 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 }
 
 
+// [Test Video] 영상 재생 함수
 void CTorussV3TestDlg::PlayTestVideo()
 {
 	// 테스트 영상(sample_h264.mp4) 파일 열기
@@ -331,186 +360,7 @@ CString irRtsp = MakeRtspUrl(profile.thermal);
 #endif
 
 
-// [EO/IR] [RTSP] 영상 재생
-void CTorussV3TestDlg::PlayEOIRVideo()
-{
-	// 현재 영상 스레드에서 ADO COM 사용을 위한 초기화
-	HRESULT hrCo = ::CoInitialize(NULL);
-
-	if (FAILED(hrCo))
-	{
-		AfxMessageBox(_T("COM 초기화 실패"));
-		m_isPlaying = false; // 재생 상태 OFF
-		return;
-	}
-
-	// MSSQL에서 장비 프로파일 조회
-	DeviceProfile profile;
-
-	CString strCameraName;
-
-	nSel = m_comboCamera.GetCurSel(); // 현재 ComboBox에서 선택된 카메라 인덱스 가져오기
-
-	switch (nSel)
-	{
-	case 1:
-		strCameraName = _T("Camera_01");
-		break;
-
-	case 2:
-		strCameraName = _T("Camera_02");
-		break;
-
-	case 3:
-		strCameraName = _T("Camera_03");
-		break;
-
-	default:
-		AfxMessageBox(_T("카메라를 반드시 선택해주세요."));
-
-		m_isPlaying = false; // 재생 상태 OFF
-
-		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
-		::CoUninitialize();
-		return;
-	}
-
-	// CString(strCameraName)을
-	// ANSI(char*) 문자열로 변환해서
-	// selectedCamera에 저장
-	CT2A selectedCamera(strCameraName, CP_ACP);
-
-	// 현재 선택된 Camera 이름 로그 출력
-	std::cout << "[Selected Camera] "
-		<< selectedCamera
-		<< std::endl;
-
-	std::cout << "========================================" << std::endl;
-
-
-	// 선택된 Camera_xx 장비 정보 조회
-	if (!m_sqlManager.LoadDeviceProfile(strCameraName, profile))
-	{
-		AfxMessageBox(_T("장비 프로파일 조회 실패"));
-
-		std::cout << "[DB ERROR] DeviceProfile Load Failed." << std::endl;
-
-		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
-		::CoUninitialize();
-
-		m_isPlaying = false; // 재생 상태 OFF
-		return;
-	}
-
-
-	// DB에서 조회한 장비 정보 기반으로 EO RTSP 주소 생성
-	CString eoRtsp = CRtspBuilder::BuildColorRtsp(profile);
-
-	// DB에서 조회한 장비 정보 기반으로 IR RTSP 주소 생성
-	CString irRtsp = CRtspBuilder::BuildThermalRtsp(profile);
-
-	CStringA eoRtspA(eoRtsp);
-	CStringA irRtspA(irRtsp);
-
-	// EO RTSP 디코더 시작
-	m_eoDecoder.Open(std::string(eoRtspA.GetString()));
-
-	// IR RTSP 디코더 시작
-	m_irDecoder.Open(std::string(irRtspA.GetString()));
-
-	// Open()은 내부 디코딩 스레드를 시작하는 함수이므로,
-	// 실제 RTSP 연결 완료까지 시간이 걸릴 수 있음.
-	// 따라서 최대 3초 동안 IsOpened() 상태를 확인하며 대기 필요
-	for (int i = 0; i < 30; i++)
-	{
-		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened())
-			break;
-
-		Sleep(100);
-	}
-
-	// 최대 대기 시간 이후에도 열리지 않은 경우 연결 실패로 판단
-
-	bool bEOOpened = m_eoDecoder.IsOpened(); // EO RTSP 연결 성공 여부 확인
-	bool bIROpened = m_irDecoder.IsOpened(); // IR RTSP 연결 성공 여부 확인
-
-	// EO 또는 IR 중 하나라도 연결 실패 시,
-	// 전체 RTSP 연결 실패로 판단하여 재생 종료 처리
-	if (!bEOOpened || !bIROpened)
-	{
-		AfxMessageBox(_T("EO/IR 카메라 연결 실패"));
-
-		std::cout << "========================================" << std::endl;
-
-		std::cout << "[RTSP CONNECTION FAILED]" << std::endl;
-
-		StopEOIRVideo();
-
-		ClearEOIRView();
-
-		return;
-	}
-
-	std::cout << "========================================" << std::endl;
-
-	std::cout << "[EO / IR Device Profile Information]" << std::endl;
-
-	std::cout << " " << std::endl;
-
-	CT2A cameraId(profile.camera_Id, CP_ACP);
-	CT2A siteName(profile.site_Name, CP_ACP);
-	CT2A deviceModel(profile.device_Model, CP_ACP);
-	CT2A ccbIp(profile.ccb_Ip, CP_ACP);
-	CT2A ccbPort(profile.ccb_Port, CP_ACP);
-
-	CT2A colorMaker(profile.color.maker, CP_ACP);
-	CT2A colorIp(profile.color.ip, CP_ACP);
-
-	CT2A thermalMaker(profile.thermal.maker, CP_ACP);
-	CT2A thermalIp(profile.thermal.ip, CP_ACP);
-
-	std::cout << "1. Camera_Id     : " << cameraId << std::endl;
-	std::cout << "2. Site_Name     : " << siteName << std::endl;
-	std::cout << "3. Device_Model  : " << deviceModel << std::endl;
-	std::cout << "4. Ccb_Ip        : " << ccbIp << std::endl;
-	std::cout << "5. Ccb_Port      : " << ccbPort << std::endl;
-	std::cout << "6. Color_Maker   : " << colorMaker << std::endl;
-	std::cout << "7. Color_Ip      : " << colorIp << std::endl;
-	std::cout << "8. Thermal_Maker : " << thermalMaker << std::endl;
-	std::cout << "9. Thermal_Ip    : " << thermalIp << std::endl;
-
-	std::cout << " " << std::endl;
-
-	std::cout << "[CONNECTED COMPLETE!]" << std::endl;
-
-	std::cout << "========================================" << std::endl;
-
-	VideoFrame eoFrame; // EO 최신 프레임 저장 변수
-
-	VideoFrame irFrame; // IR 최신 프레임 저장 변수
-
-	// 재생 중이면 반복
-	while (m_isPlaying)
-	{
-		// EO 최신 프레임 가져오기
-		if (m_eoDecoder.IsOpened() && m_eoDecoder.GetLatestFrame(eoFrame))
-		{
-			m_ColorCamView.DrawFrame(eoFrame.bgr);
-		}
-
-		// IR 최신 프레임 가져오기
-		if (m_irDecoder.IsOpened() && m_irDecoder.GetLatestFrame(irFrame))
-		{
-			m_ThermalCamView.DrawFrame(irFrame.bgr);
-		}
-		Sleep(1); // 화면 출력 과부하 방지
-	}
-	StopEOIRVideo(); // [EOIR] 영상 종료 함수
-	ClearEOIRView(); // [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
-}
-
-
-// 테스트 카메라 => [RTSP] 영상 재생
+// [테스트 카메라] => [RTSP] 영상 재생
 void CTorussV3TestDlg::PlayRTSPVideo()
 {
 	// 테스트 카메라1 RTSP 주소
@@ -581,35 +431,200 @@ void CTorussV3TestDlg::PlayRTSPVideo()
 		}
 		Sleep(1);
 	}
-	m_eoDecoder.Close(); // EO 디코더 종료
-	m_irDecoder.Close(); // IR 디코더 종료
 
-	m_isPlaying = false; // 재생 상태 OFF
-
-	ClearEOIRView(); // [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
 }
 
 
-// DISCONNECT 버튼 클릭
-void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
+// [EO/IR] 영상 출력 함수
+void CTorussV3TestDlg::PlayEOIRVideo()
 {
+	// 현재 영상 스레드에서 ADO COM 사용을 위한 초기화
+	HRESULT hrCo = ::CoInitialize(NULL);
+
+	if (FAILED(hrCo))
+	{
+		AfxMessageBox(_T("COM 초기화 실패"));
+
+		m_isPlaying = false; // 재생 상태 OFF
+		return;
+	}
+
+	// MSSQL에서 장비 프로파일 조회
+	DeviceProfile profile;
+
+	CString strCameraName;
+
+	nSel = m_comboCamera.GetCurSel(); // 현재 ComboBox에서 선택된 카메라 인덱스 가져오기
+
+	switch (nSel)
+	{
+	case 1:
+		strCameraName = _T("Camera_01");
+		break;
+
+	case 2:
+		strCameraName = _T("Camera_02");
+		break;
+
+	case 3:
+		strCameraName = _T("Camera_03");
+		break;
+
+	default:
+		AfxMessageBox(_T("카메라를 반드시 선택해주세요."));
+
+		m_isPlaying = false; // 재생 상태 OFF
+
+		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
+		::CoUninitialize();
+		return;
+	}
+
+	// CString(strCameraName)을
+	// ANSI(char*) 문자열로 변환해서
+	// selectedCamera에 저장
+	CT2A selectedCamera(strCameraName, CP_ACP);
+
+	// 현재 선택된 Camera 이름 로그 출력
+	std::cout << "[Selected Camera] "
+		<< selectedCamera
+		<< std::endl;
+
 	std::cout << "========================================" << std::endl;
 
-	std::cout << "[DISCONNECT BUTTON CLICK]" << std::endl;
+
+	// 선택된 Camera_xx 장비 정보 조회
+	if (!m_sqlManager.LoadDeviceProfile(strCameraName, profile))
+	{
+		AfxMessageBox(_T("장비 프로파일 조회 실패"));
+
+		std::cout << "[DB ERROR] DeviceProfile Load Failed." << std::endl;
+
+		// 현재 스레드에서 사용한 COM 시스템 정리(해제)
+		::CoUninitialize();
+
+		m_isPlaying = false; // 재생 상태 OFF
+		return;
+	}
+
+	// DB에서 조회한 장비 정보 기반으로 EO RTSP 주소 생성
+	CString eoRtsp = CRtspBuilder::BuildColorRtsp(profile);
+
+	// DB에서 조회한 장비 정보 기반으로 IR RTSP 주소 생성
+	CString irRtsp = CRtspBuilder::BuildThermalRtsp(profile);
+
+	CStringA eoRtspA(eoRtsp);
+	CStringA irRtspA(irRtsp);
+
+	// EO RTSP 디코더 시작
+	m_eoDecoder.Open(std::string(eoRtspA.GetString()));
+
+	// IR RTSP 디코더 시작
+	m_irDecoder.Open(std::string(irRtspA.GetString()));
+
+	// Open()은 내부 디코딩 스레드를 시작하는 함수이므로,
+	// 실제 RTSP 연결 완료까지 시간이 걸릴 수 있음.
+	// 따라서 최대 3초 동안 IsOpened() 상태를 확인하며 대기 필요
+	for (int i = 0; i < 30; i++)
+	{
+		if (m_eoDecoder.IsOpened() && m_irDecoder.IsOpened()) break;
+
+		Sleep(100);
+	}
+
+	// 최대 대기 시간 이후에도 열리지 않은 경우 연결 실패로 판단
+
+	bool bEOOpened = m_eoDecoder.IsOpened(); // [EO] RTSP 연결 성공 여부 확인
+	bool bIROpened = m_irDecoder.IsOpened(); // [IR] RTSP 연결 성공 여부 확인
+
+	// [EO/IR] 카메라 각각 연결 실패 시, 개별 메시지 출력
+	if (!bEOOpened)
+	{
+		AfxMessageBox(_T("EO 카메라 연결 실패"));
+
+		std::cout << "========================================" << std::endl;
+
+		std::cout << "[EO RTSP CONNECTION FAILED]" << std::endl;
+	}
+	else if (!bIROpened)
+	{
+		AfxMessageBox(_T("IR 카메라 연결 실패"));
+
+		std::cout << "========================================" << std::endl;
+
+		std::cout << "[IR RTSP CONNECTION FAILED]" << std::endl;
+	}
+	// [EO/IR] 카메라 모두 연결 실패 시, 메시지 박스 출력 및 재생 종료 처리
+	else if (!bEOOpened && !bIROpened)
+	{
+		AfxMessageBox(_T("EO/IR 카메라 연결 실패"));
+
+		std::cout << "========================================" << std::endl;
+
+		std::cout << "[EO/IR RTSP CONNECTION FAILED]" << std::endl;
+
+		m_isPlaying = false; // 재생 상태 OFF
+
+		return;
+	}
+
+	std::cout << "========================================" << std::endl;
+
+	std::cout << "[EO / IR Device Profile Information]" << std::endl;
 
 	std::cout << " " << std::endl;
 
-	// 이미 종료 상태면 중복 Disconnect 방지
-	if (!m_isPlaying)
+	CT2A cameraId(profile.camera_Id, CP_ACP);
+	CT2A siteName(profile.site_Name, CP_ACP);
+	CT2A deviceModel(profile.device_Model, CP_ACP);
+	CT2A ccbIp(profile.ccb_Ip, CP_ACP);
+	CT2A ccbPort(profile.ccb_Port, CP_ACP);
+
+	CT2A colorMaker(profile.color.maker, CP_ACP);
+	CT2A colorIp(profile.color.ip, CP_ACP);
+
+	CT2A thermalMaker(profile.thermal.maker, CP_ACP);
+	CT2A thermalIp(profile.thermal.ip, CP_ACP);
+
+	std::cout << "1. Camera_Id     : " << cameraId << std::endl;
+	std::cout << "2. Site_Name     : " << siteName << std::endl;
+	std::cout << "3. Device_Model  : " << deviceModel << std::endl;
+	std::cout << "4. Ccb_Ip        : " << ccbIp << std::endl;
+	std::cout << "5. Ccb_Port      : " << ccbPort << std::endl;
+	std::cout << "6. Color_Maker   : " << colorMaker << std::endl;
+	std::cout << "7. Color_Ip      : " << colorIp << std::endl;
+	std::cout << "8. Thermal_Maker : " << thermalMaker << std::endl;
+	std::cout << "9. Thermal_Ip    : " << thermalIp << std::endl;
+
+	std::cout << " " << std::endl;
+
+	std::cout << "[CONNECTED COMPLETE!]" << std::endl;
+
+	VideoFrame eoFrame; // EO 최신 프레임 저장 변수
+
+	VideoFrame irFrame; // IR 최신 프레임 저장 변수
+
+	// 재생 중이면 반복
+	while (m_isPlaying)
 	{
-		std::cout << "[VIDEO] Already Stopped." << std::endl;
-		return;
+		// EO 최신 프레임 가져오기
+		if (m_eoDecoder.IsOpened() && m_eoDecoder.GetLatestFrame(eoFrame))
+		{
+			m_ColorCamView.DrawFrame(eoFrame.bgr);
+		}
+
+		// IR 최신 프레임 가져오기
+		if (m_irDecoder.IsOpened() && m_irDecoder.GetLatestFrame(irFrame))
+		{
+			m_ThermalCamView.DrawFrame(irFrame.bgr);
+		}
+		Sleep(1); // 화면 출력 과부하 방지
 	}
-	m_isPlaying = false; // 재생 상태 OFF
+
 }
 
 
-// [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
+// [EO/IR] 영상 초기화 및 검은 화면 출력 함수
 void CTorussV3TestDlg::ClearEOIRView()
 {
 	// [EO] 화면 검정색 초기화
@@ -631,20 +646,164 @@ void CTorussV3TestDlg::ClearEOIRView()
 
 		std::cout << "[IR VIEW] Clear Complete" << std::endl;
 	}
+
+}
+
+
+// [EO/IR] 영상 종료 함수
+void CTorussV3TestDlg::StopEOIRVideo()
+{
+	m_isPlaying = false; // 재생 상태 OFF
+
+	m_eoDecoder.Close(); // EO 디코더 종료
+	m_irDecoder.Close(); // IR 디코더 종료
+
+	// 현재 스레드에서 사용한 COM 시스템 정리(해제)
+	::CoUninitialize();
+}
+
+
+// [Video] [Thread join] 처리 함수
+void CTorussV3TestDlg::JoinVidThread()
+{
+	// 종료된 thread 객체만 남아있을 수 있으므로 join 처리!
+	if (m_videoThread.joinable())
+	{
+		std::cout << "[THREAD] Join Start..." << std::endl;
+
+		m_videoThread.join();
+
+		std::cout << "[THREAD] Join Complete" << std::endl;
+
+		std::cout << " " << std::endl;
+	}
+
+}
+
+
+// [DISCONNECT] 버튼 클릭
+void CTorussV3TestDlg::OnBnClickedButtonDisconnect()
+{
+	std::cout << "========================================" << std::endl;
+
+	std::cout << "[DISCONNECT BUTTON CLICK]" << std::endl;
+
+	std::cout << " " << std::endl;
+
+	// 이미 영상 종료 상태이면 중복 Disconnect 방지
+	if (!m_isPlaying)
+	{
+		std::cout << "[VIDEO] Already Stopped." << std::endl;
+
+		std::cout << " " << std::endl;
+
+		JoinVidThread(); // [Video] [Thread join] 처리 함수
+
+		return;
+	}
+
+	StopEOIRVideo(); // 1. [EO/IR] 영상 종료 함수
+
+	JoinVidThread(); // 2. [Video] [Thread join] 처리 함수
+
+	ClearEOIRView(); // 3. [EO/IR] 영상 초기화 및 검은 화면 출력 함수
+
 	std::cout << " " << std::endl;
 
 	std::cout << "[DISCONNECT COMPLETE]" << std::endl;
 }
 
 
-// [EOIR] 영상 종료 함수
-void CTorussV3TestDlg::StopEOIRVideo()
+// [TCP CONNECT] 버튼 클릭 이벤트 함수
+void CTorussV3TestDlg::OnBnClickedButtonTcpConnect()
 {
-	m_eoDecoder.Close(); // EO 디코더 종료
-	m_irDecoder.Close(); // IR 디코더 종료
+	// IP Address Control 각 자리 값 저장 변수
+	BYTE field0;
+	BYTE field1;
+	BYTE field2;
+	BYTE field3;
 
-	m_isPlaying = false; // 재생 상태 OFF
+	// IP Address Control 값 가져오기
+	m_ipTcpAddress.GetAddress(
+		field0,
+		field1,
+		field2,
+		field3);
 
-	// 현재 스레드에서 사용한 COM 시스템 정리(해제)
-	::CoUninitialize();
+	// 문자열 저장 변수 (Ip)
+	CString strIp;
+
+	// 숫자 4개를 하나의 문자열(IP 주소 형태)로 변환
+	strIp.Format(
+		_T("%d.%d.%d.%d"),
+		field0,
+		field1,
+		field2,
+		field3);
+
+	// 문자열 저장 변수 (Port)
+	CString strPort;
+
+	// TCP Port 입력값 가져오기
+	m_editTcpPort.GetWindowText(strPort);
+
+	// CString IP 문자열을 ANSI문자열로 변환
+	CT2A ipA(strIp, CP_ACP);
+
+	// CString Port 문자열을 int 값으로 변환
+	int port = _ttoi(strPort);
+
+	// TCP 연결 시도 로그 출력
+	std::cout << "========================================" << std::endl;
+
+	std::cout << "[TCP CONNECT BUTTON CLICK]" << std::endl;
+
+	std::cout << " " << std::endl;
+
+	std::cout << "[TCP IP] "
+		<< (LPCSTR)ipA
+		<< std::endl;
+
+	std::cout << "[TCP PORT] "
+		<< port
+		<< std::endl;
+
+	m_tcpClient.Connect((LPCSTR)ipA, port); // TCP Client 클래스의 Connect 함수 호출
+}
+
+
+// [TCP DISCONNECT] 버튼 클릭 이벤트 함수
+void CTorussV3TestDlg::OnBnClickedButtonTcpDisconnect()
+{
+	std::cout << "========================================" << std::endl;
+
+	// [TCP DISCONNECT] 버튼 클릭 로그 출력
+	std::cout << "[TCP DISCONNECT BUTTON CLICK]" << std::endl;
+
+	std::cout << " " << std::endl;
+
+	m_tcpClient.Disconnect(); // TCP Client 클래스의 Disconnect 함수 호출
+}
+
+
+// [SEND TEST] 버튼 클릭 이벤트 함수
+void CTorussV3TestDlg::OnBnClickedButtonSendTest()
+{
+	std::cout << "========================================" << std::endl;
+
+	// SEND TEST 버튼 클릭 로그 출력
+	std::cout << "[SEND TEST BUTTON CLICK]" << std::endl;
+
+	std::cout << " " << std::endl;
+
+	// 테스트 송신용 [HEX Packet] 데이터 생성: [0x02]: STX, [0x03]: ETX 가정
+	std::vector<unsigned char> packet =
+	{
+		0x02,
+		0x10,
+		0x20,
+		0x30,
+		0x03
+	};
+	m_tcpClient.Send(packet); // TCP 데이터 송신
 }

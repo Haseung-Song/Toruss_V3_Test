@@ -29,7 +29,10 @@ public:
 	// RTSP 닫기
 	void Close();
 
-	// 최신 프레임 가져오기
+	// FFmpeg 관련 내부 자원 정리 함수
+	void Cleanup();
+
+	// 최신프레임 가져오기
 	bool GetLatestFrame(VideoFrame& outFrame);
 
 	// 연결 여부
@@ -71,10 +74,7 @@ private:
 	AVFrame* m_bgrFrame = nullptr;
 
 	SwsContext* m_swsCtx = nullptr;
-
 	uint8_t* m_bgrBuffer = nullptr;
-
 	int m_videoStreamIndex = -1;
-
 	int64_t m_frameCounter = 0;
 };

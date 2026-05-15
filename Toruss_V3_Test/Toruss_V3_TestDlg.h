@@ -6,6 +6,7 @@
 
 #include "CVideoView.h"
 
+#include "CTcpClient.h"
 #include "CRTSPDecoder.h"
 #include "CMSSQLManager.h"
 
@@ -40,9 +41,11 @@ protected:
 
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
+
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	afx_msg void OnDestroy();
+
 	DECLARE_MESSAGE_MAP()
 
 
@@ -57,6 +60,9 @@ public:
 	// 예: "장비 선택"
 	CStatic m_labelCamera;
 
+	// TCP [IP / Port] UI 폰트
+	CFont m_fontTcp;
+
 
 public:
 	// 왼쪽   EO 카메라 출력 영역
@@ -69,6 +75,16 @@ public:
 
 	// 현재 선택된 카메라 인덱스 (-1: 선택 없음)
 	int nSel = -1;
+
+
+public:
+	// TCP 서버 IP       Address Control
+	CIPAddressCtrl m_ipTcpAddress;
+
+	// TCP 서버 Port 입력용 Edit Control
+	CEdit m_editTcpPort;
+
+	CTcpClient m_tcpClient; // TCP Client 통신 클래스 객체
 
 
 private:
@@ -93,13 +109,16 @@ private:
 
 	void PlayTestVideo(); // 테스트 영상 출력 함수
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
-	void PlayEOIRVideo(); // [EOIR] 영상 출력 함수
+	void PlayEOIRVideo(); // [EO/IR] 영상 출력 함수
 
-	void ClearEOIRView(); // [RTSP] 및 [EOIR] 영상 초기화 및 검은 화면 출력 함수
-	void StopEOIRVideo(); // [EOIR] 영상 종료 함수
+	void ClearEOIRView(); // [EO/IR] 영상 초기화 및 검은 화면 출력 함수
+	void StopEOIRVideo(); // [EO/IR] 영상 종료 함수
+	void JoinVidThread(); // [Video] [Thread join] 처리 함수
 
 public:
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
-
+	afx_msg void OnBnClickedButtonTcpConnect();
+	afx_msg void OnBnClickedButtonTcpDisconnect();
+	afx_msg void OnBnClickedButtonSendTest();
 };

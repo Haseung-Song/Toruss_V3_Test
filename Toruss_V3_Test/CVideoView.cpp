@@ -1,5 +1,10 @@
+
+// CVideoView.cpp: 备泅 颇老
+//
+
 #include "pch.h"
 #include "CVideoView.h"
+
 
 // 积己磊
 CVideoView::CVideoView()
