@@ -36,7 +36,6 @@ connect 시도
 ↓
 성공 / 실패 Console 출력 */
 
-
 // [TCP 서버] 연결 시작
 bool CTcpClient::Connect(const std::string& ip, int port)
 {
@@ -114,6 +113,14 @@ bool CTcpClient::Connect(const std::string& ip, int port)
 
 	std::cout << "[TCP] Connect Success." << std::endl;
 
+	if (m_recvThread.joinable())
+	{
+		std::cout << "[TCP] Previous Recv Thread Still Joinable." << std::endl;
+
+		std::cout << " " << std::endl;
+		return false;
+	}
+
 	// TCP 수신 스레드 시작
 	m_recvThread = std::thread(&CTcpClient::RecvLoop, this);
 
@@ -145,8 +152,7 @@ join()
 ↓
 "스레드 종료 완료 확인" */
 
-
-// [TCP 서버] 연결 종료
+// [TCP] 서버 연결 종료 함수
 void CTcpClient::Disconnect()
 {
 	// 이미 연결 종료 상태면 함수 종료
@@ -175,18 +181,20 @@ void CTcpClient::Disconnect()
 	// 수신 스레드가 실행 중이면 종료 대기
 	if (m_recvThread.joinable())
 	{
+		std::cout << "[TCP] Recv Thread Join..." << std::endl;
+
 		m_recvThread.join();
+
+		std::cout << "[TCP] Recv Thread Join Complete." << std::endl;
 	}
 
 	WSACleanup(); // Winsock 사용 종료
-
-	std::cout << " " << std::endl;
 
 	std::cout << "[TCP] Disconnect Complete." << std::endl; // Console Log 출력
 }
 
 
-// TCP 데이터 송신
+// [TCP] 데이터 송신 함수
 bool CTcpClient::Send(const std::vector<unsigned char>& data)
 {
 	// TCP 연결 상태가 아니면, 송신 불가
@@ -217,7 +225,7 @@ bool CTcpClient::Send(const std::vector<unsigned char>& data)
 		return false;
 	}
 
-	std::cout << "[TCP SEND] "; // 송신 성공 로그 출력
+	std::cout << "[TCP SEND]: "; // 송신 성공 로그 출력
 
 	// 송신할 데이터(data)에서 1바이트씩 순차적으로...
 	for (unsigned char byte : data)
@@ -228,13 +236,13 @@ bool CTcpClient::Send(const std::vector<unsigned char>& data)
 		//     0xFF -> FF
 		printf("%02X ", byte);
 	}
-	std::cout << std::endl;
+	std::cout << " " << std::endl;
 
 	return true;
 }
 
 
-// TCP 수신 스레드 함수
+// [TCP] 수신 스레드 함수
 void CTcpClient::RecvLoop()
 {
 	// 수신 버퍼
@@ -262,23 +270,25 @@ void CTcpClient::RecvLoop()
 			if (recvSize == 0)
 			{
 				std::cout << "[TCP] Server Disconnected." << std::endl;
+
+				std::cout << " " << std::endl;
 			}
 			else
 			{
 				std::cout << "[TCP] Receive Failed." << std::endl;
+
+				std::cout << " " << std::endl;
 			}
 			break;
 		}
 
-		// 수신 데이터 [HEX]로 출력
-		std::cout << "[TCP RECV] ";
+		std::cout << "[TCP RECV] "; // 수신 데이터 [HEX]로 출력
 
 		for (int i = 0; i < recvSize; i++)
 		{
-			printf("%02X ", static_cast<unsigned char>(buffer[i]));
+			printf("%02X ", static_cast<unsigned char>(buffer[i])); // 수신 데이터 [1Byte]씩 [HEX] 출력
 		}
-		std::cout << std::endl;
+		printf("\n"); // 출력 줄 -> 정리
 	}
-	// 수신 루프 종료 시 연결 상태 OFF
-	m_isConnected = false;
+	m_isConnected = false; // TCP 연결 상태 OFF
 }

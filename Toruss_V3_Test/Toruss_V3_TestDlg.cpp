@@ -11,6 +11,8 @@
 
 #include <iostream>
 
+#include <ctime>
+
 #include "afxdialogex.h"
 #include "RtspBuilder.h"
 
@@ -787,7 +789,14 @@ void CTorussV3TestDlg::OnBnClickedButtonTcpDisconnect()
 
 	std::cout << " " << std::endl;
 
-	m_tcpClient.Disconnect(); // TCP Client 클래스의 Disconnect 함수 호출
+	m_isSending = false;
+
+	// 송신용 [Thread] 종료 대기
+	if (m_sendThread.joinable())
+	{
+		m_sendThread.join();
+	}
+	m_tcpClient.Disconnect(); // TCP Client 클래스 Disconnect 함수 호출
 }
 
 
@@ -796,19 +805,85 @@ void CTorussV3TestDlg::OnBnClickedButtonSendTest()
 {
 	std::cout << "========================================" << std::endl;
 
-	// SEND TEST 버튼 클릭 로그 출력
 	std::cout << "[SEND TEST BUTTON CLICK]" << std::endl;
 
 	std::cout << " " << std::endl;
 
-	// 테스트 송신용 [HEX Packet] 데이터 생성: [0x02]: STX, [0x03]: ETX 가정
-	std::vector<unsigned char> packet =
+	// 실행마다 다른 랜덤 값 생성을 위한 seed 초기화
+	srand(static_cast<unsigned int>(time(nullptr)));
+
+	// 현재 송신 중이면 중복 실행 방지
+	if (m_isSending)
 	{
-		0x02,
-		0x10,
-		0x20,
-		0x30,
-		0x03
-	};
-	m_tcpClient.Send(packet); // TCP 데이터 송신
+		std::cout << "[TCP] Send Thread Already Running." << std::endl;
+
+		std::cout << " " << std::endl;
+		return;
+	}
+
+	// 이전 송신 Thread가 종료되었지만 join 처리 안 된 경우 정리
+	if (m_sendThread.joinable())
+	{
+		std::cout << "[THREAD] Previous Send Thread Join..." << std::endl;
+
+		m_sendThread.join();
+
+		std::cout << "[THREAD] Previous Send Thread Join Complete" << std::endl;
+
+		std::cout << " " << std::endl;
+	}
+
+	m_isSending = true;
+
+	m_sendThread = std::thread([this]()
+		{
+			while (m_isSending)
+			{
+				// 테스트 랜덤형 [HEX Packet] 데이터 송신
+				std::vector<unsigned char> packet;
+
+				packet.push_back(0x02); // 시작 Byte(STX)
+
+				// 테스트 고정형 [HEX Packet] 데이터 송신
+#if false
+				// [0x02]: 시작 Byte(STX)
+				// [0x03]: 종료 Byte(ETX)
+				std::vector<unsigned char> packet =
+				{
+					0x02,
+					0x10,
+					0x20,
+					0x30,
+					0x03
+				};
+#endif
+				// [랜덤형 데이터] 10개 생성
+				for (int i = 0; i < 10; i++)
+				{
+					// 0x00 ~ 0xFF 랜덤 값 생성
+					unsigned char randomValue =
+						static_cast<unsigned char>(rand() % 256);
+
+					packet.push_back(randomValue);
+				}
+				packet.push_back(0x03); // 종료 Byte(ETX)
+
+				// 생성한 [TCP Packet] 데이터 서버로 송신
+				if (!m_tcpClient.Send(packet))
+				{
+					// [TCP] 송신 실패 시 무한 반복 송신 중단
+					std::cout << "[TCP] Send Loop Stop." << std::endl;
+
+					std::cout << " " << std::endl;
+
+					m_isSending = false;
+					break;
+				}
+				Sleep(50);
+			}
+			std::cout << "[THREAD] Send Thread End." << std::endl;
+
+			std::cout << " " << std::endl;
+		});
+
 }

@@ -105,9 +105,13 @@ private:
 	std::thread m_videoThread; // 영상 재생 별도 스레드
 	bool m_isPlaying = false;  // 영상 재생 상태 플래그
 
+	bool m_isSending = false;  // 송신 Thread 반복 제어=
+	std::thread m_sendThread;  // 송신 Thread 객체 변수
+
 	CMSSQLManager m_sqlManager; // MSSQL 연결 및 장비 프로파일 조회 담당 클래스!
 
 	void PlayTestVideo(); // 테스트 영상 출력 함수
+
 	void PlayRTSPVideo(); // [RTSP] 카메라 영상 출력 함수
 	void PlayEOIRVideo(); // [EO/IR] 영상 출력 함수
 
@@ -118,6 +122,7 @@ private:
 public:
 	afx_msg void OnBnClickedButtonConnect();
 	afx_msg void OnBnClickedButtonDisconnect();
+
 	afx_msg void OnBnClickedButtonTcpConnect();
 	afx_msg void OnBnClickedButtonTcpDisconnect();
 	afx_msg void OnBnClickedButtonSendTest();
