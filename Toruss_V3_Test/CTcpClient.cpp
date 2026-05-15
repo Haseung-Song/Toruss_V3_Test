@@ -180,6 +180,8 @@ void CTcpClient::Disconnect()
 
 	WSACleanup(); // Winsock 사용 종료
 
+	std::cout << " " << std::endl;
+
 	std::cout << "[TCP] Disconnect Complete." << std::endl; // Console Log 출력
 }
 

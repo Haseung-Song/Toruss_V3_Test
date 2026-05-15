@@ -8,6 +8,7 @@
 #include "Toruss_V3_TestDlg.h"
 
 #include <atlconv.h>
+
 #include <iostream>
 
 #include "afxdialogex.h"
@@ -764,9 +765,13 @@ void CTorussV3TestDlg::OnBnClickedButtonTcpConnect()
 		<< (LPCSTR)ipA
 		<< std::endl;
 
+	std::cout << " " << std::endl;
+
 	std::cout << "[TCP PORT] "
 		<< port
 		<< std::endl;
+
+	std::cout << " " << std::endl;
 
 	m_tcpClient.Connect((LPCSTR)ipA, port); // TCP Client 클래스의 Connect 함수 호출
 }
