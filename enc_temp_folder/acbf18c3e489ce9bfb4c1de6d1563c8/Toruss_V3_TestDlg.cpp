@@ -900,5 +900,4 @@ void CTorussV3TestDlg::OnBnClickedButtonSendTest()
 			std::cout << " " << std::endl;
 		});
 
-
 }

@@ -93,18 +93,25 @@ bool CTcpClient::Connect(const std::string& ip, int port)
 
 	std::cout << "[TCP] Connect Try..." << std::endl;
 
+	std::cout << " " << std::endl;
+
 	// TCP 서버 연결 시도
 	if (connect(
 		m_socket,
 		(sockaddr*)&serverAddr,
 		sizeof(serverAddr)) == SOCKET_ERROR)
 	{
-		std::cout << "[TCP] Connect Failed." << std::endl;
+		std::cout
+			<< "[TCP ERROR] Connect Failed : "
+			<< WSAGetLastError()
+			<< std::endl;
 
 		closesocket(m_socket);
+
 		m_socket = INVALID_SOCKET;
 
-		WSACleanup(); // Winsock 사용 종료
+		WSACleanup();
+
 		return false;
 	}
 
