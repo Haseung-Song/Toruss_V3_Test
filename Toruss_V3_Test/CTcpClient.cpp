@@ -285,7 +285,7 @@ void CTcpClient::RecvLoop()
 			}
 			else
 			{
-				std::cout << "[TCP] Receive Failed." << std::endl;
+				std::cout << "\n[TCP] Receive Failed." << std::endl;
 
 				std::cout << " " << std::endl;
 			}
@@ -298,7 +298,7 @@ void CTcpClient::RecvLoop()
 		{
 			printf("%02X ", static_cast<unsigned char>(buffer[i])); // 수신 데이터 [1Byte]씩 [HEX] 출력
 		}
-		printf("\n"); // 출력 줄 -> 정리
+		std::cout << std::endl;
 	}
 	m_isConnected = false; // TCP 연결 상태 OFF
 }
