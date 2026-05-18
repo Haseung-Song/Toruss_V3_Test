@@ -256,6 +256,9 @@ void CTorussV3TestDlg::OnBnClickedButtonConnect()
 	if (m_isPlaying)
 	{
 		std::cout << "[VIDEO] Already Connecting Or Playing." << std::endl;
+
+		std::cout << "" << std::endl;
+
 		return;
 	}
 
@@ -541,11 +544,20 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	bool bIROpened = m_irDecoder.IsOpened(); // [IR] RTSP 연결 성공 여부 확인
 
 	// [EO/IR] 카메라 각각 연결 실패 시, 개별 메시지 출력
-	if (!bEOOpened)
+	if (!bEOOpened && !bIROpened)
+	{
+		AfxMessageBox(_T("EO/IR 카메라 연결 실패"));
+
+		std::cout << "[EO/IR RTSP CONNECTION FAILED]" << std::endl;
+
+		m_isPlaying = false; // 재생 상태 OFF
+
+		::CoUninitialize();
+		return;
+	}
+	else if (!bEOOpened)
 	{
 		AfxMessageBox(_T("EO 카메라 연결 실패"));
-
-		std::cout << "========================================" << std::endl;
 
 		std::cout << "[EO RTSP CONNECTION FAILED]" << std::endl;
 	}
@@ -553,22 +565,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 	{
 		AfxMessageBox(_T("IR 카메라 연결 실패"));
 
-		std::cout << "========================================" << std::endl;
-
 		std::cout << "[IR RTSP CONNECTION FAILED]" << std::endl;
-	}
-	// [EO/IR] 카메라 모두 연결 실패 시, 메시지 박스 출력 및 재생 종료 처리
-	else if (!bEOOpened && !bIROpened)
-	{
-		AfxMessageBox(_T("EO/IR 카메라 연결 실패"));
-
-		std::cout << "========================================" << std::endl;
-
-		std::cout << "[EO/IR RTSP CONNECTION FAILED]" << std::endl;
-
-		m_isPlaying = false; // 재생 상태 OFF
-
-		return;
 	}
 
 	std::cout << "========================================" << std::endl;
@@ -623,7 +620,7 @@ void CTorussV3TestDlg::PlayEOIRVideo()
 		}
 		Sleep(1); // 화면 출력 과부하 방지
 	}
-
+	::CoUninitialize(); // 현재 스레드에서 사용한 COM 시스템 정리(해제)
 }
 
 
@@ -660,9 +657,6 @@ void CTorussV3TestDlg::StopEOIRVideo()
 
 	m_eoDecoder.Close(); // EO 디코더 종료
 	m_irDecoder.Close(); // IR 디코더 종료
-
-	// 현재 스레드에서 사용한 COM 시스템 정리(해제)
-	::CoUninitialize();
 }
 
 

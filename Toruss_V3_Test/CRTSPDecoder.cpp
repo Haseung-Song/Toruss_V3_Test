@@ -36,6 +36,8 @@ bool CRTSPDecoder::Open(const std::string& url)
 	if (m_decodeThread.joinable())
 	{
 		std::cout << "[DECODER] Previous Decode Thread Exists." << std::endl;
+
+		std::cout << "" << std::endl;
 		return false;
 	}
 
