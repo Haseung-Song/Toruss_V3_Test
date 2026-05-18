@@ -40,7 +40,6 @@ bool CRTSPDecoder::Open(const std::string& url)
 		std::cout << "" << std::endl;
 		return false;
 	}
-
 	m_url = url;
 	m_running = true;
 	m_opened = false;
@@ -114,7 +113,6 @@ void CRTSPDecoder::Cleanup()
 	{
 		avformat_close_input(&m_fmtCtx);
 	}
-
 	m_codec = nullptr;
 	m_videoStreamIndex = -1;
 	m_opened = false;

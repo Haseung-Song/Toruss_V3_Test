@@ -46,6 +46,18 @@ bool CTcpClient::Connect(const std::string& ip, int port)
 		return true;
 	}
 
+	// 이전 [Recv Thread]가 남아있으면 먼저 정리
+	if (m_recvThread.joinable())
+	{
+		std::cout << "[TCP] Previous Recv Thread Join..." << std::endl;
+
+		m_recvThread.join();
+
+		std::cout << "[TCP] Previous Recv Thread Join Complete." << std::endl;
+
+		std::cout << " " << std::endl;
+	}
+
 	WSADATA wsaData; // Winsock 초기화용 구조체
 
 	// Winsock 2.2 초기화
@@ -114,19 +126,12 @@ bool CTcpClient::Connect(const std::string& ip, int port)
 
 		return false;
 	}
-
 	// TCP 연결 상태 ON
 	m_isConnected = true;
 
 	std::cout << "[TCP] Connect Success." << std::endl;
 
-	if (m_recvThread.joinable())
-	{
-		std::cout << "[TCP] Previous Recv Thread Still Joinable." << std::endl;
-
-		std::cout << " " << std::endl;
-		return false;
-	}
+	std::cout << " " << std::endl;
 
 	// TCP 수신 스레드 시작
 	m_recvThread = std::thread(&CTcpClient::RecvLoop, this);
@@ -194,8 +199,7 @@ void CTcpClient::Disconnect()
 
 		std::cout << "[TCP] Recv Thread Join Complete." << std::endl;
 	}
-
-	WSACleanup(); // Winsock 사용 종료
+	WSACleanup(); // Winsock 사용 종료  
 
 	std::cout << "[TCP] Disconnect Complete." << std::endl; // Console Log 출력
 }
@@ -258,8 +262,7 @@ void CTcpClient::RecvLoop()
 	// TCP 연결 상태일 때 반복 수신
 	while (m_isConnected)
 	{
-		// 버퍼 초기화
-		memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer)); // 버퍼 초기화
 
 		// TCP 데이터 수신
 		int recvSize = recv(
@@ -276,7 +279,7 @@ void CTcpClient::RecvLoop()
 			// 상대방 정상 연결 종료
 			if (recvSize == 0)
 			{
-				std::cout << "[TCP] Server Disconnected." << std::endl;
+				std::cout << "\n[TCP] Server Disconnected." << std::endl;
 
 				std::cout << " " << std::endl;
 			}

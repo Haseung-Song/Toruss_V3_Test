@@ -893,7 +893,7 @@ void CTorussV3TestDlg::OnBnClickedButtonSendTest()
 					m_isSending = false;
 					break;
 				}
-				Sleep(50);
+				Sleep(300);
 			}
 			std::cout << "[THREAD] Send Thread End." << std::endl;
 
